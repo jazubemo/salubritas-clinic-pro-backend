@@ -1,0 +1,23 @@
+[
+  {
+    "dni": "1601199400471",
+    "fullName": "Jasmin Benitez",
+    "authId": "SVN1duR0aANeN5FBJUUGcPAFn1h1",
+    "clinicId": "abc",
+    "status": "ACTIVE"
+  },
+  {
+    "dni": "1601199400475",
+    "fullName": "Jane Doe",
+    "authId": "NNeNbyQTaeTNeAKdx4XiYyFWDV42",
+    "clinicId": "abc",
+    "status": "ACTIVE"
+  },
+  {
+    "dni": "1601199400476",
+    "fullName": "Jhon Doe",
+    "authId": "123456GHy",
+    "clinicId": "abc",
+    "status": "ACTIVE"
+  }
+]

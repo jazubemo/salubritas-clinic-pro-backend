@@ -1,0 +1,39 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Query {
+  getUsers: [User!]!
+}
+
+type User {
+  _id: ID!
+
+  """
+  The unique security identifier (UID) provided by Firebase Authentication. Used to map the database user to their authenticated identity.
+  """
+  authId: String!
+
+  """
+  The unique identifier (ID) of the clinic this user or resource belongs to.
+  """
+  clinicId: String!
+
+  """
+  The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).
+  """
+  dni: String!
+
+  """
+  The user's given name(s). Includes first and middle names (e.g., 'Carlos Alberto').
+  """
+  firstName: String!
+
+  """The user's legal surname(s)."""
+  lastName: String!
+
+  """
+  The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
+  """
+  status: Float!
+}
