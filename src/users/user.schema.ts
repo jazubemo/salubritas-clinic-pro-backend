@@ -46,7 +46,7 @@ export class User extends Document {
   @Field(() => GraphQLJSON, {
     description: `Map of clinic IDs to the user's assigned roles at each location.`,
   })
-  @Prop({ required: true })
+  @Prop({ required: true, type: Object, default: {} })
   clinicRoles!: Record<string, Role[]>;
 
   @Field({
