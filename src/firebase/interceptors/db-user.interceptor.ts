@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { UserService } from '../../users/user.service';
+import { UserService } from '../../users/users.service';
 import { REQUIRE_DB_USER_KEY } from '../decorators/require-db-user.decorator';
 import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
 
