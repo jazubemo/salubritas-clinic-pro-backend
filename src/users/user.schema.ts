@@ -54,7 +54,7 @@ export class User extends Document {
       'The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.',
   })
   @Prop({ required: true, enum: Status, default: Status.ACTIVE })
-  status!: Status;
+  status!: string;
 
   // @Field()
   // @Prop({ required: true, enum: Role, default: [Role.PATIENT] })

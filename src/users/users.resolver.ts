@@ -1,17 +1,17 @@
 import { Query, Resolver } from '@nestjs/graphql';
-import { Model } from 'mongoose';
 import { User } from './user.schema';
-import { InjectModel } from '@nestjs/mongoose';
 import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/firebase/auth.guard';
+import { AuthGuard } from 'src/firebase/guards/auth.guard';
+
+import { UsersService } from './users.service';
 
 @Resolver(() => User)
 @UseGuards(AuthGuard)
 export class UsersResolver {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Query(() => [User])
   async getUsers(): Promise<User[]> {
-    return this.userModel.find().exec();
+    return await this.usersService.findAll();
   }
 }

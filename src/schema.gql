@@ -35,5 +35,5 @@ type User {
   """
   The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
   """
-  status: Float!
+  status: String!
 }
