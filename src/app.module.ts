@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { join } from 'path';
+import GraphQLJSON from 'graphql-type-json';
 
 //sub-modules
 import { UsersModule } from './users/users.module';
@@ -22,6 +23,7 @@ import { FirebaseModule } from './firebase/firebase.module';
       playground: false, // Disables the old playground
       plugins: [ApolloServerPluginLandingPageLocalDefault()], // Enables Apollo Sandbox
       context: ({ req }) => ({ req }),
+      resolvers: { JSON: GraphQLJSON },
     }),
     // 3. Use forRootAsync to inject ConfigService
     MongooseModule.forRootAsync({
