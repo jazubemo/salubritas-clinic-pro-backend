@@ -10,6 +10,7 @@ import GraphQLJSON from 'graphql-type-json';
 //sub-modules
 import { UsersModule } from './users/users.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { FirebaseModule } from './firebase/firebase.module';
     }),
     UsersModule,
     FirebaseModule,
+    RedisModule,
   ],
 
   providers: [],
