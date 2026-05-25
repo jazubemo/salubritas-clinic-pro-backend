@@ -1,4 +1,3 @@
-// src/auth/interceptors/db-user.interceptor.ts
 import {
   Injectable,
   NestInterceptor,
@@ -8,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { UserService } from '../../users/users.service';
+import { UsersService } from '../../users/users.service';
 import { REQUIRE_DB_USER_KEY } from '../decorators/require-db-user.decorator';
 import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
 
@@ -16,11 +15,10 @@ import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
 export class DbUserInterceptor implements NestInterceptor {
   constructor(
     private reflector: Reflector,
-    private userService: UserService,
+    private userService: UsersService,
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler) {
-    // 1. Check if the current route has the @RequireDbUser() decorator
     const requireDbUser = this.reflector.getAllAndOverride<boolean>(
       REQUIRE_DB_USER_KEY,
       [context.getHandler(), context.getClass()],
@@ -39,7 +37,6 @@ export class DbUserInterceptor implements NestInterceptor {
       );
     }
 
-    // 3. Fetch from DB only when explicitly required by the metadata flag
     const dbUser = await this.userService.findOne({ authId: req?.token.uid });
     if (!dbUser) {
       throw new UnauthorizedException('User profile not found');

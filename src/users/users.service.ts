@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './user.schema'; // Adjust path to your Mongoose schema
+import { User } from './user.schema';
 import { Status } from './status.enum';
 
 @Injectable()
