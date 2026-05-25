@@ -7,7 +7,7 @@ import {
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { Request } from 'express';
 import * as admin from 'firebase-admin';
-import { FirebaseService } from '../firebase/firebase.service';
+import { FirebaseService } from '../firebase.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

@@ -3,7 +3,7 @@ import { Model } from 'mongoose';
 import { User } from './user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/firebase/auth.guard';
+import { AuthGuard } from 'src/firebase/guards/auth.guard';
 
 @Resolver(() => User)
 @UseGuards(AuthGuard)
