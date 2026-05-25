@@ -5,9 +5,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Request } from 'express';
 import * as admin from 'firebase-admin';
 import { FirebaseService } from '../firebase.service';
+import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = GqlExecutionContext.create(context);
 
-    const graphqlContext = ctx.getContext<{ req: Request }>();
+    const graphqlContext = ctx.getContext<{ req: AuthenticatedRequest }>();
     const req = graphqlContext.req;
 
     const authHeader = req.headers['authorization'];
@@ -26,14 +26,14 @@ export class AuthGuard implements CanActivate {
       );
     }
 
-    const token = authHeader.split(' ')[1];
-    if (!token) {
+    const firebaseToken = authHeader.split(' ')[1];
+    if (!firebaseToken) {
       throw new UnauthorizedException('Malformed Authorization header');
     }
 
     let decodedToken: admin.auth.DecodedIdToken;
     try {
-      decodedToken = await this.firebaseService.verifyToken(token);
+      decodedToken = await this.firebaseService.verifyToken(firebaseToken);
     } catch {
       throw new UnauthorizedException('Invalid Firebase Token');
     }
