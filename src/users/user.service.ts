@@ -15,7 +15,7 @@ export class UserService {
       throw new UnauthorizedException('User profile not found in database.');
     }
 
-    if (dbUser.status === Status.ARCHIVED) {
+    if (dbUser.status === Status.ARCHIVED.toString()) {
       throw new UnauthorizedException('Your account has been suspended.');
     }
 
