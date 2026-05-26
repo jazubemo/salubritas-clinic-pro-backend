@@ -6,13 +6,14 @@ import { AuthGuard } from 'src/firebase/guards/auth.guard';
 import { UsersService } from './users.service';
 import { Roles } from 'src/firebase/decorators/roles.decorator';
 import { RolesGuard } from 'src/firebase/guards/roles.guard';
+import { Role } from './role.enum';
 
 @Resolver(() => User)
 @UseGuards(AuthGuard)
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles('ADMIN')
+  @Roles(Role.DOCTOR)
   @UseGuards(RolesGuard)
   @Query(() => [User])
   async getUsers(

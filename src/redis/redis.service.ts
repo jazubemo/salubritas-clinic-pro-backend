@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { Role } from 'src/users/role.enum';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
@@ -17,17 +18,17 @@ export class RedisService implements OnModuleDestroy {
 
   async setUserRoles(
     userId: string,
-    clinicRoles: Record<string, string[]>,
+    clinicRoles: Record<string, string[] | Role[]>,
   ): Promise<void> {
     const key = `user:roles:${userId}`;
     // Cache for 24 hours (86400 seconds)
     await this.client.set(key, JSON.stringify(clinicRoles), 'EX', 86400);
   }
 
-  async getUserRoles(userId: string): Promise<Record<string, string[]> | null> {
+  async getUserRoles(userId: string): Promise<Record<string, Role[]> | null> {
     const data = await this.client.get(`user:roles:${userId}`);
     if (!data) return null; // Cache Miss
-    return JSON.parse(data) as Record<string, string[]>;
+    return JSON.parse(data) as Record<string, Role[]>;
   }
 
   async clearUserCache(userId: string): Promise<void> {

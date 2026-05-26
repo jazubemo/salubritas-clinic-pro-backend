@@ -12,12 +12,15 @@ import { ClinicArgs } from '../interfaces/clinic.args';
 import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
 import { isEmptyArray } from 'src/common/helpers/array.helper';
+import { UsersService } from 'src/users/users.service';
+import { Role } from 'src/users/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private redisService: RedisService,
     private reflector: Reflector,
+    private userService: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,7 +35,7 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    const requiredRoles = this.reflector.get<string[]>(
+    const requiredRoles = this.reflector.get<Role[]>(
       'roles',
       context.getHandler(),
     );
@@ -66,18 +69,27 @@ export class RolesGuard implements CanActivate {
   }
 
   async checkClinicRoles(
-    requiredRoles: string[],
+    requiredRoles: Role[],
     activeClinicId: string,
     authId: string,
   ): Promise<boolean> {
     const cachedClinicRoles = await this.redisService.getUserRoles(authId);
+    let activeClinicRoles: Role[] = [];
 
     if (cachedClinicRoles) {
-      const activeClinicRoles = cachedClinicRoles[activeClinicId] || [];
-      return activeClinicRoles.some((role) => requiredRoles.includes(role));
+      activeClinicRoles = cachedClinicRoles[activeClinicId] || [];
+    } else {
+      const dbUser = await this.userService.findOne({ authId });
+
+      if (dbUser) {
+        const dbClinicRoles = dbUser.clinicRoles;
+        activeClinicRoles = dbClinicRoles[activeClinicId] || [];
+        await this.redisService.setUserRoles(authId, dbClinicRoles);
+      } else {
+        throw new BadRequestException('User does not exist on the database');
+      }
     }
 
-    // TODO: get user roles from the database
-    return false;
+    return activeClinicRoles.some((role) => requiredRoles.includes(role));
   }
 }
