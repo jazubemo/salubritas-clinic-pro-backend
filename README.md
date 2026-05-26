@@ -26,11 +26,6 @@ A secure, high-performance GraphQL backend engineered for medical professionals 
 * **🏗️ NestJS Dependency Injection:** Keeps business logic isolated from database frameworks for easy unit testing.
 * **🧼 Data Sanitization:** Strict Mongoose schemas prevent NoSQL injection vectors.
 
-⚡**Quick Start**
-
-**Prerequisites**
-Node.js (v22+) and MongoDB instance running locally or on Atlas.
-
 ## ⚡ Quick Start
 
 ### 📋 Prerequisites
