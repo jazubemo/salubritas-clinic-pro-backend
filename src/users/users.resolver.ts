@@ -1,17 +1,24 @@
-import { Query, Resolver } from '@nestjs/graphql';
-import { Model } from 'mongoose';
+import { Args, Query, Resolver } from '@nestjs/graphql';
 import { User } from './user.schema';
-import { InjectModel } from '@nestjs/mongoose';
 import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/firebase/auth.guard';
+import { AuthGuard } from 'src/firebase/guards/auth.guard';
+
+import { UsersService } from './users.service';
+import { Roles } from 'src/firebase/decorators/roles.decorator';
+import { RolesGuard } from 'src/firebase/guards/roles.guard';
+import { Role } from './role.enum';
 
 @Resolver(() => User)
 @UseGuards(AuthGuard)
 export class UsersResolver {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(private readonly usersService: UsersService) {}
 
+  @Roles(Role.DOCTOR)
+  @UseGuards(RolesGuard)
   @Query(() => [User])
-  async getUsers(): Promise<User[]> {
-    return this.userModel.find().exec();
+  async getUsers(
+    @Args('activeClinicId', { type: () => String }) activeClinicId: string,
+  ): Promise<User[]> {
+    return await this.usersService.findAll();
   }
 }
