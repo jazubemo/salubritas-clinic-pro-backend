@@ -1,23 +1,36 @@
 [
   {
     "dni": "1601199400471",
-    "fullName": "Jasmin Benitez",
+    "firstName": "Jasmin",
+    "lastName": "Benitez",
     "authId": "SVN1duR0aANeN5FBJUUGcPAFn1h1",
-    "clinicId": "abc",
+    "clinicRoles": {
+      "a": ["ADMIN"],
+      "b": ["PATIENT"]
+    },
     "status": "ACTIVE"
   },
   {
     "dni": "1601199400475",
-    "fullName": "Jane Doe",
+    "firstName": "Jane",
+    "lastName": "Doe",
     "authId": "NNeNbyQTaeTNeAKdx4XiYyFWDV42",
-    "clinicId": "abc",
+    "clinicRoles": {
+      "a": ["DOCTOR"],
+      "b": ["DOCTOR"]
+    },
     "status": "ACTIVE"
   },
   {
     "dni": "1601199400476",
-    "fullName": "Jhon Doe",
+    "firstName": "Jhon",
+    "lastName": "Doe",
     "authId": "123456GHy",
-    "clinicId": "abc",
+    "clinicRoles": {
+      "a": ["PATIENT"],
+      "b": ["PATIENT"]
+    },
     "status": "ACTIVE"
   }
 ]
+
