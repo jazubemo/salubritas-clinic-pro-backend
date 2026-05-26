@@ -11,6 +11,7 @@ import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
 import { ClinicArgs } from '../interfaces/clinic.args';
 import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
+import { isEmptyArray } from 'src/common/helpers/array.helper';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,10 +23,10 @@ export class RolesGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = GqlExecutionContext.create(context);
 
-    const graphqlContext = ctx.getContext<{ req: AuthenticatedRequest }>();
-    const req = graphqlContext.req;
+    const request = ctx.getContext<{ req: AuthenticatedRequest }>().req;
+    const authId = request.token?.uid;
 
-    if (!req?.token) {
+    if (!authId) {
       throw new UnauthorizedException(
         'Authentication token required for this resource',
       );
@@ -33,10 +34,10 @@ export class RolesGuard implements CanActivate {
 
     const requiredRoles = this.reflector.get<string[]>(
       'roles',
-      context.getHandler(), // Points to the specific resolver function being called
+      context.getHandler(),
     );
 
-    if (requiredRoles.length === 0) {
+    if (isEmptyArray(requiredRoles)) {
       return true;
     }
 
@@ -52,7 +53,7 @@ export class RolesGuard implements CanActivate {
     const isAuthorized = await this.checkClinicRoles(
       requiredRoles,
       activeClinicId,
-      req?.token.uid,
+      authId,
     );
 
     if (!isAuthorized) {
@@ -68,11 +69,11 @@ export class RolesGuard implements CanActivate {
     requiredRoles: string[],
     activeClinicId: string,
     authId: string,
-  ) {
-    const userClinicRoles = await this.redisService.getUserRoles(authId);
+  ): Promise<boolean> {
+    const cachedClinicRoles = await this.redisService.getUserRoles(authId);
 
-    if (userClinicRoles) {
-      return userClinicRoles[activeClinicId].some((role) =>
+    if (cachedClinicRoles) {
+      return cachedClinicRoles[activeClinicId].some((role) =>
         requiredRoles.includes(role),
       );
     }
