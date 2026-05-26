@@ -73,9 +73,8 @@ export class RolesGuard implements CanActivate {
     const cachedClinicRoles = await this.redisService.getUserRoles(authId);
 
     if (cachedClinicRoles) {
-      return cachedClinicRoles[activeClinicId].some((role) =>
-        requiredRoles.includes(role),
-      );
+      const activeClinicRoles = cachedClinicRoles[activeClinicId] || [];
+      return activeClinicRoles.some((role) => requiredRoles.includes(role));
     }
 
     // TODO: get user roles from the database
