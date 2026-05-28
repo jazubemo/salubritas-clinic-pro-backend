@@ -2,7 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import { FirebaseService } from './firebase.service';
 import { UsersModule } from 'src/users/users.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { DbUserInterceptor } from './interceptors/db-user.interceptor';
+import { DbUserInterceptor } from '../users/interceptors/db-user.interceptor';
 
 @Global()
 @Module({

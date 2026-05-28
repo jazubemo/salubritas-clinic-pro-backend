@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../users.service';
 import { REQUIRE_DB_USER_KEY } from '../decorators/require-db-user.decorator';
-import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
+import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-request';
 
 @Injectable()
 export class DbUserInterceptor implements NestInterceptor {
@@ -39,7 +39,7 @@ export class DbUserInterceptor implements NestInterceptor {
 
     const dbUser = await this.userService.findOne({ authId: req?.token.uid });
     if (!dbUser) {
-      throw new UnauthorizedException('User profile not found');
+      throw new UnauthorizedException('Access Denied: Unregistered account.');
     }
 
     req.user = dbUser;
