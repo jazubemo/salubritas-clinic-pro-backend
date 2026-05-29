@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { User } from '../../users/user.schema';
-import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
+import { User } from '../user.schema';
+import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-request';
 
 export const CurrentUser = createParamDecorator(
   (data: unknown, context: ExecutionContext): User | undefined => {

@@ -7,11 +7,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { AuthenticatedRequest } from '../interfaces/authenticated-interface';
-import { ClinicArgs } from '../interfaces/clinic.args';
+import { AuthenticatedRequest } from '../interfaces/authenticated-request';
+import { SecurityClinicArgs } from '../interfaces/clinic.args';
 import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
-import { isEmptyArray } from 'src/common/helpers/array.helper';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/role.enum';
 
@@ -40,11 +39,7 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
     );
 
-    if (isEmptyArray(requiredRoles)) {
-      return true;
-    }
-
-    const args = ctx.getArgs<ClinicArgs>();
+    const args = ctx.getArgs<SecurityClinicArgs>();
     const { activeClinicId } = args;
 
     if (!activeClinicId) {
@@ -68,26 +63,46 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 
+  checkClinicAccess(
+    clinicRoles: Record<string, Role[]>,
+    activeClinicId: string,
+  ) {
+    const hasClinicAccess = Object.hasOwn(clinicRoles, activeClinicId);
+    if (!hasClinicAccess) {
+      throw new ForbiddenException(
+        "You're not allowed to see this clinic resources",
+      );
+    }
+  }
+
   async checkClinicRoles(
     requiredRoles: Role[],
     activeClinicId: string,
     authId: string,
   ): Promise<boolean> {
-    const cachedClinicRoles = await this.redisService.getUserRoles(authId);
     let activeClinicRoles: Role[] = [];
 
+    const cachedClinicRoles = await this.redisService.getUserRoles(authId);
+
     if (cachedClinicRoles) {
-      activeClinicRoles = cachedClinicRoles[activeClinicId] || [];
+      this.checkClinicAccess(cachedClinicRoles, activeClinicId);
+      activeClinicRoles = cachedClinicRoles[activeClinicId];
     } else {
       const dbUser = await this.userService.findOne({ authId });
 
       if (dbUser) {
         const dbClinicRoles = dbUser.clinicRoles;
-        activeClinicRoles = dbClinicRoles[activeClinicId] || [];
+        this.checkClinicAccess(dbClinicRoles, activeClinicId);
+        activeClinicRoles = dbClinicRoles[activeClinicId];
+
         await this.redisService.setUserRoles(authId, dbClinicRoles);
       } else {
         throw new BadRequestException('User does not exist on the database');
       }
+    }
+
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
     }
 
     return activeClinicRoles.some((role) => requiredRoles.includes(role));
