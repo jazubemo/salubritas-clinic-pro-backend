@@ -9,6 +9,7 @@ import { RolesGuard } from 'src/firebase/guards/roles.guard';
 import { Role } from './role.enum';
 import { RequireDbUser } from 'src/users/decorators/require-db-user.decorator';
 import { CurrentUser } from 'src/users/decorators/current-user.decorator';
+import { SecurityClinicArgs } from 'src/common/security/clinic-security.args';
 
 @Resolver(() => User)
 @UseGuards(AuthGuard)
@@ -18,10 +19,15 @@ export class UsersResolver {
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => [User])
-  async getUsers(
-    @Args('activeClinicId', { type: () => String }) activeClinicId: string,
-  ): Promise<User[]> {
+  async getUsers(@Args() securityArgs: SecurityClinicArgs): Promise<User[]> {
     return await this.usersService.findAll();
+  }
+
+  @Roles()
+  @UseGuards(RolesGuard)
+  @Query(() => String, { name: 'getHello' })
+  getHello(@Args() securityArgs: SecurityClinicArgs): string {
+    return `Hello there!`;
   }
 
   @Query(() => User)

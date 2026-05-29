@@ -21,12 +21,12 @@ import { RedisModule } from './redis/redis.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
-      playground: false, // Disables the old playground
-      plugins: [ApolloServerPluginLandingPageLocalDefault()], // Enables Apollo Sandbox
+      playground: false,
+      plugins: [ApolloServerPluginLandingPageLocalDefault()],
       context: ({ req }) => ({ req }),
       resolvers: { JSON: GraphQLJSON },
     }),
-    // 3. Use forRootAsync to inject ConfigService
+
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -8,8 +8,15 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 scalar JSON
 
 type Query {
+  getHello(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): String!
   getMe: User!
-  getUsers(activeClinicId: String!): [User!]!
+  getUsers(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): [User!]!
 }
 
 type User {
@@ -27,6 +34,9 @@ type User {
   The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).
   """
   dni: String!
+
+  """The user's email. It's linked to firebase authentication."""
+  email: String
 
   """
   The user's given name(s). Includes first and middle names (e.g., 'Carlos Alberto').

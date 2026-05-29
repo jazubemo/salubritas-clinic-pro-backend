@@ -5,7 +5,7 @@ import { Role } from './role.enum';
 import { Status } from './status.enum';
 import { GraphQLJSON } from 'graphql-type-json';
 
-@ObjectType() // GraphQL Decorator
+@ObjectType()
 @Schema({ timestamps: true })
 export class User extends Document {
   @Field(() => ID)
@@ -22,6 +22,20 @@ export class User extends Document {
     index: true,
   })
   dni!: string;
+
+  @Field({
+    description: "The user's email. It's linked to firebase authentication.",
+    nullable: true,
+  })
+  @Prop({
+    unique: true,
+    sparse: true,
+    trim: true,
+    lowercase: true,
+    required: false,
+    nullable: true,
+  })
+  email?: string;
 
   @Field({
     description:

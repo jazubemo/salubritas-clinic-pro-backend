@@ -1,3 +1,3 @@
-export interface ClinicArgs {
+export interface SecurityClinicArgs {
   activeClinicId: string;
 }

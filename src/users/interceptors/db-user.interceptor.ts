@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   CallHandler,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
@@ -13,6 +14,8 @@ import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-re
 
 @Injectable()
 export class DbUserInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(DbUserInterceptor.name);
+
   constructor(
     private reflector: Reflector,
     private userService: UsersService,
@@ -37,12 +40,21 @@ export class DbUserInterceptor implements NestInterceptor {
       );
     }
 
-    const dbUser = await this.userService.findOne({ authId: req?.token.uid });
-    if (!dbUser) {
-      throw new UnauthorizedException('Access Denied: Unregistered account.');
-    }
+    try {
+      const dbUser = await this.userService.findOne({ authId: req?.token.uid });
 
-    req.user = dbUser;
+      if (!dbUser) {
+        throw new UnauthorizedException('Access Denied: Unregistered account.');
+      }
+
+      req.user = dbUser;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        '[DbUserInterceptor] Failed to fetch this user from database',
+        errorMessage,
+      );
+    }
 
     return next.handle();
   }
