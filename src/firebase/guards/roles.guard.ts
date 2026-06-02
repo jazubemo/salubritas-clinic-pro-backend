@@ -12,7 +12,7 @@ import { SecurityClinicArgs } from '../interfaces/clinic.args';
 import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
 import { UsersService } from 'src/users/users.service';
-import { Role } from 'src/users/role.enum';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
