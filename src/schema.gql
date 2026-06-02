@@ -12,7 +12,7 @@ type Query {
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): String!
-  getMe: User!
+  getMe: User
   getUsers(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
@@ -28,7 +28,7 @@ type User {
   authId: String!
 
   """Map of clinic IDs to the user's assigned roles at each location."""
-  clinicRoles: JSON!
+  clinicMemberships: JSON!
 
   """
   The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).
@@ -45,9 +45,4 @@ type User {
 
   """The user's legal surname(s)."""
   lastName: String!
-
-  """
-  The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
-  """
-  status: String!
 }
