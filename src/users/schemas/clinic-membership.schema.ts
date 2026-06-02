@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { Status } from './status.enum';
-import { Role } from './role.enum';
+import { Status } from './../enums/status.enum';
+import { Role } from './../enums/role.enum';
 import { Field } from '@nestjs/graphql';
 
-@Schema({ _id: true })
+@Schema({ _id: true, timestamps: true })
 export class ClinicMembership {
   @Prop({ type: Types.ObjectId, ref: 'Clinic', required: true })
   clinicId!: Types.ObjectId;
@@ -21,9 +21,9 @@ export class ClinicMembership {
     enum: Status,
     default: Status.ACTIVE,
   })
-  status!: string;
+  status!: Status;
 
-  @Prop({ type: [Role], required: true })
+  @Prop({ type: [String], required: true, enum: Role })
   roles!: Role[];
 }
 

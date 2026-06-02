@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ProjectionType } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { Status } from './enums/status.enum';
 
@@ -16,15 +16,25 @@ export class UsersService {
 
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async findOne(filter: Record<string, any>): Promise<User | null> {
+  async findOne(
+    filter: Record<string, any>,
+    projection?: ProjectionType<User>,
+  ): Promise<User | null> {
     try {
-      const dbUser = await this.userModel.findOne(filter).exec();
+      const dbUser = await this.userModel
+        .findOne(filter, projection)
+        .lean()
+        .exec();
 
       if (!dbUser) {
         throw new NotFoundException('User profile not found in database.');
       }
 
-      if (dbUser.status === Status.ARCHIVED.toString()) {
+      const isArchivedEverywhere = dbUser.clinicMemberships.every(
+        (membership) => membership.status === Status.ARCHIVED,
+      );
+
+      if (isArchivedEverywhere) {
         throw new UnauthorizedException('Your account has been suspended.');
       }
 

@@ -13,6 +13,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
+import { Status } from 'src/users/enums/status.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -88,12 +89,35 @@ export class RolesGuard implements CanActivate {
       this.checkClinicAccess(cachedClinicRoles, activeClinicId);
       activeClinicRoles = cachedClinicRoles[activeClinicId];
     } else {
-      const dbUser = await this.userService.findOne({ authId });
+      const dbUser = await this.userService.findOne(
+        { authId },
+        { clinicMemberships: 1, _id: 0 },
+      );
 
       if (dbUser) {
-        const dbClinicRoles = dbUser.clinicRoles;
-        this.checkClinicAccess(dbClinicRoles, activeClinicId);
-        activeClinicRoles = dbClinicRoles[activeClinicId];
+        const dbUserClinic = dbUser.clinicMemberships.find(
+          (membership) =>
+            membership.clinicId.toString() === activeClinicId &&
+            membership.status === Status.ACTIVE,
+        );
+
+        if (!dbUserClinic) {
+          throw new ForbiddenException(
+            "You're not allowed to see this clinic resources",
+          );
+        }
+
+        activeClinicRoles = dbUserClinic.roles;
+
+        // Note: In Redis we save it as Map for optimization
+        const dbClinicRoles = dbUser.clinicMemberships.reduce(
+          (accumulatorClinicRoles, currentMembership) => {
+            accumulatorClinicRoles[currentMembership.clinicId.toString()] =
+              currentMembership.roles;
+            return accumulatorClinicRoles;
+          },
+          {},
+        );
 
         await this.redisService.setUserRoles(authId, dbClinicRoles);
       } else {
