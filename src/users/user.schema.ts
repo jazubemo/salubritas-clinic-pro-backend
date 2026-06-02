@@ -4,7 +4,7 @@ import { Document, Types } from 'mongoose';
 import {
   ClinicMembershipSchema,
   ClinicMembership,
-} from './clinic-memberships.schema';
+} from './clinic-membership.schema';
 import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
