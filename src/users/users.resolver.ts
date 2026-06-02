@@ -1,5 +1,5 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { User } from './user.schema';
+import { User } from './schemas/user.schema';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/firebase/guards/auth.guard';
 
