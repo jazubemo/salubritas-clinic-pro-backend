@@ -30,7 +30,7 @@ export class UsersResolver {
     return `Hello there!`;
   }
 
-  @Query(() => User)
+  @Query(() => User, { nullable: true })
   @RequireDbUser()
   getMe(@CurrentUser() user: User) {
     return user;

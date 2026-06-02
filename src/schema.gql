@@ -12,7 +12,7 @@ type Query {
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): String!
-  getMe: User!
+  getMe: User
   getUsers(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
