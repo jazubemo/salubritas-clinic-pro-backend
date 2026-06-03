@@ -24,7 +24,6 @@ import { RedisModule } from './redis/redis.module';
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
       context: ({ req }) => ({ req }),
-      resolvers: { JSON: GraphQLJSON },
     }),
 
     MongooseModule.forRootAsync({

@@ -2,10 +2,16 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
+type ClinicMembership {
+  clinicId: ID!
+  name: String!
+  roles: [Role!]!
+
+  """
+  The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
+  """
+  status: Status!
+}
 
 type Query {
   getHello(
@@ -19,6 +25,21 @@ type Query {
   ): [User!]!
 }
 
+"""The available user roles within a clinic."""
+enum Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+"""
+The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
+"""
+enum Status {
+  ACTIVE
+  ARCHIVED
+}
+
 type User {
   _id: ID!
 
@@ -28,7 +49,7 @@ type User {
   authId: String!
 
   """Map of clinic IDs to the user's assigned roles at each location."""
-  clinicMemberships: JSON!
+  clinicMemberships: [ClinicMembership!]!
 
   """
   The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).

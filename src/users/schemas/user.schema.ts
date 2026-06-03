@@ -1,11 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { Document, Types } from 'mongoose';
-import {
-  ClinicMembershipSchema,
-  ClinicMembership,
-} from './clinic-membership.schema';
-import { GraphQLJSON } from 'graphql-type-json';
+import { ClinicMembership } from './clinic-membership.schema';
 
 @ObjectType()
 @Schema({ timestamps: true })
@@ -59,10 +55,10 @@ export class User extends Document {
   @Prop({ required: true, unique: true, index: true })
   authId!: string;
 
-  @Field(() => GraphQLJSON, {
+  @Field(() => [ClinicMembership], {
     description: `Map of clinic IDs to the user's assigned roles at each location.`,
   })
-  @Prop({ required: true, type: [ClinicMembershipSchema], default: {} })
+  @Prop({ required: true, type: [ClinicMembership] })
   clinicMemberships!: ClinicMembership[];
 
   // @Field()
