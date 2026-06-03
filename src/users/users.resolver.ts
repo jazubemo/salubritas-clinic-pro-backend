@@ -1,12 +1,12 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { User } from './user.schema';
+import { User } from './schemas/user.schema';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/firebase/guards/auth.guard';
 
 import { UsersService } from './users.service';
 import { Roles } from 'src/firebase/decorators/roles.decorator';
 import { RolesGuard } from 'src/firebase/guards/roles.guard';
-import { Role } from './role.enum';
+import { Role } from './enums/role.enum';
 import { RequireDbUser } from 'src/users/decorators/require-db-user.decorator';
 import { CurrentUser } from 'src/users/decorators/current-user.decorator';
 import { SecurityClinicArgs } from 'src/common/security/clinic-security.args';

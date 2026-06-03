@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { Role } from 'src/users/role.enum';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {

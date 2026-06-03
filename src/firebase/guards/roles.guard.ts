@@ -12,7 +12,8 @@ import { SecurityClinicArgs } from '../interfaces/clinic.args';
 import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
 import { UsersService } from 'src/users/users.service';
-import { Role } from 'src/users/role.enum';
+import { Role } from 'src/users/enums/role.enum';
+import { Status } from 'src/users/enums/status.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -63,7 +64,7 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 
-  checkClinicAccess(
+  checkClinicAccessFromCache(
     clinicRoles: Record<string, Role[]>,
     activeClinicId: string,
   ) {
@@ -75,6 +76,46 @@ export class RolesGuard implements CanActivate {
     }
   }
 
+  async getAndCacheUserClinicRoles(
+    authId: string,
+    activeClinicId: string,
+  ): Promise<Role[]> {
+    const dbUser = await this.userService.findOne(
+      { authId },
+      { clinicMemberships: 1, _id: 0 },
+    );
+
+    if (dbUser) {
+      const dbUserClinic = dbUser.clinicMemberships.find(
+        (membership) =>
+          membership.clinicId.toString() === activeClinicId &&
+          membership.status === Status.ACTIVE,
+      );
+
+      if (!dbUserClinic) {
+        throw new ForbiddenException(
+          "You're not allowed to see this clinic resources",
+        );
+      }
+
+      // Note: In Redis we save it as Map for optimization
+      const dbClinicRoles = dbUser.clinicMemberships.reduce(
+        (accumulatorClinicRoles, currentMembership) => {
+          accumulatorClinicRoles[currentMembership.clinicId.toString()] =
+            currentMembership.roles;
+          return accumulatorClinicRoles;
+        },
+        {},
+      );
+
+      await this.redisService.setUserRoles(authId, dbClinicRoles);
+
+      return dbUserClinic.roles;
+    } else {
+      throw new BadRequestException('User does not exist on the database');
+    }
+  }
+
   async checkClinicRoles(
     requiredRoles: Role[],
     activeClinicId: string,
@@ -82,23 +123,16 @@ export class RolesGuard implements CanActivate {
   ): Promise<boolean> {
     let activeClinicRoles: Role[] = [];
 
-    const cachedClinicRoles = await this.redisService.getUserRoles(authId);
+    const cachedUserClinicMap = await this.redisService.getUserRoles(authId);
 
-    if (cachedClinicRoles) {
-      this.checkClinicAccess(cachedClinicRoles, activeClinicId);
-      activeClinicRoles = cachedClinicRoles[activeClinicId];
+    if (cachedUserClinicMap) {
+      this.checkClinicAccessFromCache(cachedUserClinicMap, activeClinicId);
+      activeClinicRoles = cachedUserClinicMap[activeClinicId];
     } else {
-      const dbUser = await this.userService.findOne({ authId });
-
-      if (dbUser) {
-        const dbClinicRoles = dbUser.clinicRoles;
-        this.checkClinicAccess(dbClinicRoles, activeClinicId);
-        activeClinicRoles = dbClinicRoles[activeClinicId];
-
-        await this.redisService.setUserRoles(authId, dbClinicRoles);
-      } else {
-        throw new BadRequestException('User does not exist on the database');
-      }
+      activeClinicRoles = await this.getAndCacheUserClinicRoles(
+        authId,
+        activeClinicId,
+      );
     }
 
     if (!requiredRoles || requiredRoles.length === 0) {

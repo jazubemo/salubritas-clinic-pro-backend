@@ -2,35 +2,64 @@
   {
     "dni": "1601199400471",
     "firstName": "Jasmin",
-    "lastName": "Benitez",
-    "authId": "SVN1duR0aANeN5FBJUUGcPAFn1h1",
-    "clinicRoles": {
-      "a": ["ADMIN"],
-      "b": ["PATIENT"]
-    },
-    "status": "ACTIVE"
+    "lastName": "Official Test Account",
+    "authId": "TCye2RoCWXbD0R8IqoflqUNFPHh1",
+    "clinicMemberships": [
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d7" },
+        "name": "Luminary Internal Medicine",
+        "status": "ACTIVE",
+        "roles": ["ADMIN"]
+      },
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d9" },
+        "name": "Harmony Wellness Center (Mental Health & Family Practice)",
+        "status": "ACTIVE",
+        "roles": ["DOCTOR"]
+      }
+    ],
+    "email": "jasmin.benitez.test@gmail.com"
   },
   {
     "dni": "1601199400475",
-    "firstName": "Jane",
+    "firstName": "Jazubemo",
     "lastName": "Doe",
-    "authId": "NNeNbyQTaeTNeAKdx4XiYyFWDV42",
-    "clinicRoles": {
-      "a": ["DOCTOR"],
-      "b": ["DOCTOR"]
-    },
-    "status": "ACTIVE"
+    "authId": "uvMhRpdCtBdICC2lF0sH8UVDiMo2",
+    "clinicMemberships": [
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d7" },
+        "name": "Luminary Internal Medicine",
+        "status": "ACTIVE",
+        "roles": ["ADMIN"]
+      },
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d8" },
+        "name": "Beauty Dermatology",
+        "status": "ACTIVE",
+        "roles": ["DOCTOR"]
+      }
+    ],
+    "email": "jazubemo@gmail.com"
   },
   {
     "dni": "1601199400476",
     "firstName": "Jhon",
     "lastName": "Doe",
     "authId": "123456GHy",
-    "clinicRoles": {
-      "a": ["PATIENT"],
-      "b": ["PATIENT"]
-    },
-    "status": "ACTIVE"
+    "clinicMemberships": [
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d7" },
+        "name": "Luminary Internal Medicine",
+        "status": "ACTIVE",
+        "roles": ["PATIENT"]
+      },
+      {
+        "clinicId": { "$oid": "6a19b5271f1ed3c15e0936d8" },
+        "name": "Beauty Dermatology",
+        "status": "ACTIVE",
+        "roles": ["PATIENT"]
+      }
+    ],
+    "email": "jasbenitezph@gmail.com"
   }
 ]
-

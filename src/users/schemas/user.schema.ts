@@ -1,9 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { Document, Types } from 'mongoose';
-import { Role } from './role.enum';
-import { Status } from './status.enum';
-import { GraphQLJSON } from 'graphql-type-json';
+import { ClinicMembership } from './clinic-membership.schema';
 
 @ObjectType()
 @Schema({ timestamps: true })
@@ -57,18 +55,11 @@ export class User extends Document {
   @Prop({ required: true, unique: true, index: true })
   authId!: string;
 
-  @Field(() => GraphQLJSON, {
+  @Field(() => [ClinicMembership], {
     description: `Map of clinic IDs to the user's assigned roles at each location.`,
   })
-  @Prop({ required: true, type: Object, default: {} })
-  clinicRoles!: Record<string, Role[]>;
-
-  @Field({
-    description:
-      'The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.',
-  })
-  @Prop({ required: true, enum: Status, default: Status.ACTIVE })
-  status!: string;
+  @Prop({ required: true, type: [ClinicMembership] })
+  clinicMemberships!: ClinicMembership[];
 
   // @Field()
   // @Prop({ required: true, enum: Role, default: [Role.PATIENT] })
@@ -104,3 +95,5 @@ export class User extends Document {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.index({ 'clinicMemberships.clinicId': 1 });
