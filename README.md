@@ -1,16 +1,16 @@
 # salubritas-clinic-pro-backend
 
-🏥**Clinic Management Software (Electronic Medical Records) - In Progress**
+🏥**Clinic Management Software (Electronic Medical Records) - Active Development**
 
-A secure, high-performance GraphQL backend engineered for medical professionals to manage patient care, scheduling, and clinical workflows. This system is built with data integrity and strict privacy controls at its core.
+A secure, high-performance GraphQL backend engineered for medical professionals to manage patient care and scheduling. This system is built with data integrity and strict privacy controls at its core.
 
 ## 🌟 Key Features
 
 * **📅 Smart Appointment Scheduling:** Real-time booking with automated provider availability validation.
-* **📑 Electronic Medical Records (EMR):** Encrypted patient histories, timelines, and clinical notes.
-* **🩺 ICD-11 Diagnostic Coding:** Native search integration for standardized international medical classification.
-* **💊 Prescription & Lab Management:** Digital prescription engines and lab/X-ray test tracking.
-* **🔒 Strict HIPAA Readiness:** Audit logging for every data access and field-level encryption for PII.
+* **🔐 Secure Authentication with Firebase:** Built-in mechanisms to keep user authentication and sessions secure.
+* **😷 Patient Management:** Comprehensive patient lists with quick access to create, update, and archive records.
+* **🚫 Role-Based Access Control:** Secure route guards to protect endpoints and restrict unauthorized access.
+* **🔒 Strict HIPAA Readiness:** Comprehensive audit logging for data access alongside field-level encryption for PII.
 
 
 🛠️ **Tech Stack & Architecture**
