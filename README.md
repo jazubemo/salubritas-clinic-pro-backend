@@ -9,6 +9,7 @@ A secure, high-performance GraphQL backend engineered for medical professionals 
 * **📅 Smart Appointment Scheduling:** Real-time booking with automated provider availability validation.
 * **🔐 Secure Authentication with Firebase:** Built-in mechanisms to keep user authentication and sessions secure.
 * **😷 Patient Management:** Comprehensive patient lists with quick access to create, update, and archive records.
+* **🌍 URL-Based Multi-Tenancy:** Run multiple clinic instances simultaneously. The app isolates data by embedding a clinicId in the URL, allowing staff to securely work in different clinics across multiple browser tabs at the same time.
 * **🚫 Role-Based Access Control:** Secure route guards to protect endpoints and restrict unauthorized access.
 * **🔒 Strict HIPAA Readiness:** Comprehensive audit logging for data access alongside field-level encryption for PII.
 
