@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ProjectionType } from 'mongoose';
+import { FlattenMaps, Model, ProjectionType } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { Status } from './enums/status.enum';
 
@@ -19,7 +19,7 @@ export class UsersService {
   async findOne(
     filter: Record<string, any>,
     projection?: ProjectionType<User>,
-  ): Promise<User | null> {
+  ): Promise<FlattenMaps<User> | null> {
     try {
       const dbUser = await this.userModel
         .findOne(filter, projection)
@@ -38,7 +38,7 @@ export class UsersService {
         throw new UnauthorizedException('Your account has been suspended.');
       }
 
-      return dbUser;
+      return dbUser as FlattenMaps<User>;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
