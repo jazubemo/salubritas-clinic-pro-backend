@@ -8,7 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { FlattenMaps, Model, ProjectionType } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { Status } from './enums/status.enum';
+import { UserStatus } from './enums/user-status.enum';
 
 @Injectable()
 export class UsersService {
@@ -31,7 +31,7 @@ export class UsersService {
       }
 
       const isArchivedEverywhere = dbUser.clinicMemberships.every(
-        (membership) => membership.status === Status.ARCHIVED,
+        (membership) => membership.status === UserStatus.ARCHIVED,
       );
 
       if (isArchivedEverywhere) {

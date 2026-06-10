@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { Status } from './../enums/status.enum';
+import { UserStatus } from '../enums/user-status.enum';
 import { Role } from './../enums/role.enum';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 
@@ -15,16 +15,16 @@ export class ClinicMembership {
   @Prop({ required: true })
   name!: string;
 
-  @Field(() => Status, {
+  @Field(() => UserStatus, {
     description:
       'The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.',
   })
   @Prop({
     required: true,
-    enum: Status,
-    default: Status.ACTIVE,
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
   })
-  status!: Status;
+  status!: UserStatus;
 
   @Field(() => [Role])
   @Prop({ type: [String], required: true, enum: Role })

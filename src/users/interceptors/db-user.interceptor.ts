@@ -11,7 +11,7 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { UsersService } from '../users.service';
 import { REQUIRE_DB_USER_KEY } from '../decorators/require-db-user.decorator';
 import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-request';
-import { Status } from '../enums/status.enum';
+import { UserStatus } from '../enums/user-status.enum';
 
 @Injectable()
 export class DbUserInterceptor implements NestInterceptor {
@@ -49,7 +49,7 @@ export class DbUserInterceptor implements NestInterceptor {
       }
 
       const activeClinicMemberships = dbUser.clinicMemberships.filter(
-        (clinic) => clinic.status === Status.ACTIVE,
+        (clinic) => clinic.status === UserStatus.ACTIVE,
       );
 
       req.user = {

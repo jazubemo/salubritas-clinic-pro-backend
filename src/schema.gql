@@ -15,7 +15,7 @@ type ClinicMembership {
   """
   The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
   """
-  status: Status!
+  status: UserStatus!
 }
 
 input CreateAppointmentInput {
@@ -50,14 +50,6 @@ enum Role {
   PATIENT
 }
 
-"""
-The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
-"""
-enum Status {
-  ACTIVE
-  ARCHIVED
-}
-
 input UpdateAppointmentInput {
   """Example field (placeholder)"""
   exampleField: Int
@@ -90,4 +82,12 @@ type User {
 
   """The user's legal surname(s)."""
   lastName: String!
+}
+
+"""
+The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
+"""
+enum UserStatus {
+  ACTIVE
+  ARCHIVED
 }

@@ -13,7 +13,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { Reflector } from '@nestjs/core';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
-import { Status } from 'src/users/enums/status.enum';
+import { UserStatus } from 'src/users/enums/user-status.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -89,7 +89,7 @@ export class RolesGuard implements CanActivate {
       const dbUserClinic = dbUser.clinicMemberships.find(
         (membership) =>
           membership.clinicId.toString() === activeClinicId &&
-          membership.status === Status.ACTIVE,
+          membership.status === UserStatus.ACTIVE,
       );
 
       if (!dbUserClinic) {
