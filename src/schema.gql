@@ -32,15 +32,15 @@ type Mutation {
 type Query {
   appointment(id: Int!): Appointment!
   appointments: [Appointment!]!
+  findAll(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): [User!]!
   getHello(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): String!
   getMe: User
-  getUsers(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-  ): [User!]!
 }
 
 """The available user roles within a clinic."""
