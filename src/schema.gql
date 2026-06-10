@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Appointment {
+  """Example field (placeholder)"""
+  exampleField: Int!
+}
+
 type ClinicMembership {
   clinicId: ID!
   name: String!
@@ -13,7 +18,20 @@ type ClinicMembership {
   status: Status!
 }
 
+input CreateAppointmentInput {
+  """Example field (placeholder)"""
+  exampleField: Int!
+}
+
+type Mutation {
+  createAppointment(createAppointmentInput: CreateAppointmentInput!): Appointment!
+  removeAppointment(id: Int!): Appointment!
+  updateAppointment(updateAppointmentInput: UpdateAppointmentInput!): Appointment!
+}
+
 type Query {
+  appointment(id: Int!): Appointment!
+  appointments: [Appointment!]!
   getHello(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
@@ -38,6 +56,12 @@ The current operational status of the user account. Allowed values: ACTIVE, ARCH
 enum Status {
   ACTIVE
   ARCHIVED
+}
+
+input UpdateAppointmentInput {
+  """Example field (placeholder)"""
+  exampleField: Int
+  id: Int!
 }
 
 type User {
