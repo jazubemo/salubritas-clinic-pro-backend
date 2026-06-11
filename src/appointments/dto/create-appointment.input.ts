@@ -1,7 +1,9 @@
-import { InputType, Int, Field } from '@nestjs/graphql';
+import { InputType, OmitType } from '@nestjs/graphql';
+import { Appointment } from '../schemas/appointment.schema';
 
 @InputType()
-export class CreateAppointmentInput {
-  @Field(() => Int, { description: 'Example field (placeholder)' })
-  exampleField: number;
-}
+export class CreateAppointmentInput extends OmitType(
+  Appointment,
+  ['_id'] as const,
+  InputType,
+) {}

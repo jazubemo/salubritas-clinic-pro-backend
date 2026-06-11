@@ -78,6 +78,23 @@ export class Appointment extends Document {
   })
   @Prop({ required: true })
   doctorName!: string;
+
+  @Field({
+    description: 'Exact date when the appointment was created',
+  })
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  createdAt?: Date;
+
+  @Field({
+    description: 'Date when the appointment was last updated',
+  })
+  @Prop({
+    type: Date,
+  })
+  updatedAt?: Date;
 }
 
 export const AppointmentSchema = SchemaFactory.createForClass(Appointment);
