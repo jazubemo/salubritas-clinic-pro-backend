@@ -69,27 +69,30 @@ scalar DateTime
 
 type Mutation {
   createAppointment(createAppointmentInput: CreateAppointmentInput!): Appointment!
-  removeAppointment(id: Int!): Appointment!
   updateAppointment(updateAppointmentInput: UpdateAppointmentInput!): Appointment!
 }
 
 type Query {
-  appointment(id: Int!): Appointment!
-  appointments: [Appointment!]!
-  findAll(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-  ): [User!]!
-  findTodayClinicAppointments(
+  appointments(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
 
     """Filter appointments by a specific doctor ID"""
     doctorId: ID
 
+    """Filter appointments by end date"""
+    endDate: String!
+
     """Filter appointments by a specific patient ID"""
     patientId: ID
+
+    """Filter appointments by started date"""
+    startDate: String!
   ): [Appointment!]!
+  findAll(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): [User!]!
   getHello(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!

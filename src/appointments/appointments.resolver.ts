@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { AppointmentsService } from './appointments.service';
 
 import { CreateAppointmentInput } from './dto/create-appointment.input';
@@ -28,16 +28,6 @@ export class AppointmentsResolver {
     return this.appointmentsService.create(createAppointmentInput);
   }
 
-  @Query(() => [Appointment], { name: 'appointments' })
-  findAll() {
-    return this.appointmentsService.findAll();
-  }
-
-  @Query(() => Appointment, { name: 'appointment' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.appointmentsService.findOne(id);
-  }
-
   @Mutation(() => Appointment)
   updateAppointment(
     @Args('updateAppointmentInput')
@@ -49,23 +39,20 @@ export class AppointmentsResolver {
     );
   }
 
-  @Mutation(() => Appointment)
-  removeAppointment(@Args('id', { type: () => Int }) id: number) {
-    return this.appointmentsService.remove(id);
-  }
-
   @Roles(Role.ADMIN, Role.DOCTOR, Role.PATIENT)
   @UseGuards(RolesGuard)
-  @Query(() => [Appointment], { name: 'findTodayClinicAppointments' })
+  @Query(() => [Appointment], { name: 'appointments' })
   @RequireDbUser()
-  findTodayClinicAppointments(
+  findAppointments(
     @Args() securityArgs: SecurityClinicArgs,
     @Args() filters: AppointmentFiltersArgs,
     @CurrentUser() user: User,
   ) {
+    const { activeClinicId } = securityArgs;
+
     // double-checking security
     const clinicMembership = user.clinicMemberships.find(
-      (clinic) => clinic.clinicId.toString() === securityArgs.activeClinicId,
+      (clinic) => clinic.clinicId.toString() === activeClinicId,
     );
 
     if (!clinicMembership) {
@@ -81,11 +68,7 @@ export class AppointmentsResolver {
     } else {
       throw new UnauthorizedException('Access Denied.');
     }
-    console.log('filters', filters);
 
-    return this.appointmentsService.findTodayClinicAppointments(
-      securityArgs.activeClinicId,
-      filters,
-    );
+    return this.appointmentsService.findAppointments(activeClinicId, filters);
   }
 }

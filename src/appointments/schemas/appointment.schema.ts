@@ -83,5 +83,6 @@ export class Appointment extends Document {
 export const AppointmentSchema = SchemaFactory.createForClass(Appointment);
 
 // compound indexes
-AppointmentSchema.index({ clinicId: 1, doctorId: 1, startTime: 1 });
-AppointmentSchema.index({ clinicId: 1, patientId: 1, startTime: 1 });
+AppointmentSchema.index({ clinicId: 1, status: 1, startTime: 1 });
+AppointmentSchema.index({ clinicId: 1, doctorId: 1, status: 1, startTime: 1 });
+AppointmentSchema.index({ clinicId: 1, patientId: 1, status: 1, startTime: 1 });

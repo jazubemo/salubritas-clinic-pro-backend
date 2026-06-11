@@ -5,14 +5,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { tz } from '@date-fns/tz';
-import { startOfDay, endOfDay } from 'date-fns';
 
 import { CreateAppointmentInput } from './dto/create-appointment.input';
 import { UpdateAppointmentInput } from './dto/update-appointment.input';
 import { Appointment } from './entities/appointment.entity';
-import { APP_TIMEZONE } from 'src/common/constants/app.constants';
 import { AppointmentFilters } from './interfaces/AppointmentFilters';
+import { AppointmentStatus } from './enums/appointment-status.enum';
 
 @Injectable()
 export class AppointmentsService {
@@ -26,20 +24,8 @@ export class AppointmentsService {
     return 'This action adds a new appointment';
   }
 
-  findAll() {
-    return `This action returns all appointments`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} appointment`;
-  }
-
   update(id: number, updateAppointmentInput: UpdateAppointmentInput) {
     return `This action updates a #${id} appointment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} appointment`;
   }
 
   async find(filter: Record<string, any>): Promise<FlattenMaps<Appointment[]>> {
@@ -63,43 +49,31 @@ export class AppointmentsService {
     }
   }
 
-  async findTodayClinicAppointments(
-    clinicId: string,
-    filters?: AppointmentFilters,
-  ) {
-    const startOfHondurasToday = startOfDay(new Date(), {
-      in: tz(APP_TIMEZONE),
-    });
-
-    const endOfHondurasToday = endOfDay(new Date(), {
-      in: tz(APP_TIMEZONE),
-    });
-
+  async findAppointments(clinicId: string, filters: AppointmentFilters) {
     try {
       const query: Record<string, any> = {
         clinicId: new Types.ObjectId(clinicId),
         startTime: {
-          $gte: startOfHondurasToday,
-          $lte: endOfHondurasToday,
+          $gte: new Date(filters.startDate),
+          $lte: new Date(filters.endDate),
+        },
+        status: {
+          $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
         },
       };
       if (filters?.doctorId) {
-        query.doctorId = new Types.ObjectId(filters.doctorId);
+        query.doctorId = new Types.ObjectId(filters?.doctorId);
       }
 
       if (filters?.patientId) {
-        query.patientId = new Types.ObjectId(filters.patientId);
+        query.patientId = new Types.ObjectId(filters?.patientId);
       }
 
-      console.time('Database Query Time');
-      const result = await this.appointmentModel
+      return await this.appointmentModel
         .find(query)
         .sort({ startTime: 1 })
         .lean()
         .exec();
-      console.timeEnd('Database Query Time');
-      console.log('result', result);
-      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
