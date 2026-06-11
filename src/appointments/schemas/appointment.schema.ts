@@ -81,6 +81,7 @@ export class Appointment extends Document {
 
   @Field({
     description: 'Exact date when the appointment was created',
+    nullable: true,
   })
   @Prop({
     type: Date,
@@ -90,6 +91,7 @@ export class Appointment extends Document {
 
   @Field({
     description: 'Date when the appointment was last updated',
+    nullable: true,
   })
   @Prop({
     type: Date,

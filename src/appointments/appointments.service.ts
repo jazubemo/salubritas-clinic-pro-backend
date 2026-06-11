@@ -1,6 +1,7 @@
 import { FlattenMaps, Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -8,9 +9,9 @@ import {
 
 import { CreateAppointmentInput } from './dto/create-appointment.input';
 import { UpdateAppointmentInput } from './dto/update-appointment.input';
-import { Appointment } from './entities/appointment.entity';
 import { AppointmentFilters } from './interfaces/AppointmentFilters';
 import { AppointmentStatus } from './enums/appointment-status.enum';
+import { Appointment } from './schemas/appointment.schema';
 
 @Injectable()
 export class AppointmentsService {
@@ -20,12 +21,70 @@ export class AppointmentsService {
     @InjectModel(Appointment.name) private appointmentModel: Model<Appointment>,
   ) {}
 
-  create(createAppointmentInput: CreateAppointmentInput) {
-    return 'This action adds a new appointment';
+  async create(createAppointmentInput: CreateAppointmentInput) {
+    try {
+      const newAppointment = {
+        ...createAppointmentInput,
+        clinicId: new Types.ObjectId(createAppointmentInput.clinicId),
+        doctorId: new Types.ObjectId(createAppointmentInput.doctorId),
+        patientId: new Types.ObjectId(createAppointmentInput.patientId),
+      };
+
+      const overlappingAppointment = await this.appointmentModel
+        .findOne({
+          clinicId: newAppointment.clinicId,
+          doctorId: newAppointment.doctorId,
+          status: {
+            $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+          },
+          // Overlap formula: (StartA < EndB) AND (EndA > StartB)
+          startTime: { $lt: new Date(createAppointmentInput.endTime) },
+          endTime: { $gt: new Date(createAppointmentInput.startTime) },
+        })
+        .lean()
+        .exec();
+
+      if (overlappingAppointment) {
+        throw new BadRequestException(
+          'The doctor is already booked or has an overlapping appointment during this time range.',
+        );
+      }
+
+      return await this.appointmentModel.create(newAppointment);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        'Failed to create this appointment in the database',
+        errorMessage,
+      );
+
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while fetching clinic appointments data.',
+      );
+    }
   }
 
   update(id: number, updateAppointmentInput: UpdateAppointmentInput) {
     return `This action updates a #${id} appointment`;
+  }
+
+  async findOne(filter: Record<string, any>) {
+    try {
+      return this.appointmentModel.findOne(filter).lean().exec();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        'Failed to fetch these appointments from database',
+        errorMessage,
+      );
+
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while retrieving this user.',
+      );
+    }
   }
 
   async find(filter: Record<string, any>): Promise<FlattenMaps<Appointment[]>> {

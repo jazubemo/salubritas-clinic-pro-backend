@@ -9,7 +9,7 @@ type Appointment {
   clinicId: ID!
 
   """Exact date when the appointment was created"""
-  createdAt: DateTime!
+  createdAt: DateTime
 
   """The doctor that will attend the appointment."""
   doctorId: ID!
@@ -41,7 +41,7 @@ type Appointment {
   status: AppointmentStatus!
 
   """Date when the appointment was last updated"""
-  updatedAt: DateTime!
+  updatedAt: DateTime
 }
 
 """The current operational status of the appointments"""
@@ -68,7 +68,7 @@ input CreateAppointmentInput {
   clinicId: ID!
 
   """Exact date when the appointment was created"""
-  createdAt: DateTime!
+  createdAt: DateTime
 
   """The doctor that will attend the appointment."""
   doctorId: ID!
@@ -100,7 +100,7 @@ input CreateAppointmentInput {
   status: AppointmentStatus!
 
   """Date when the appointment was last updated"""
-  updatedAt: DateTime!
+  updatedAt: DateTime
 }
 
 """
@@ -109,7 +109,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Mutation {
-  createAppointment(createAppointmentInput: CreateAppointmentInput!): Appointment!
+  createAppointment(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+    createAppointmentInput: CreateAppointmentInput!
+  ): Appointment!
   updateAppointment(updateAppointmentInput: UpdateAppointmentInput!): Appointment!
 }
 

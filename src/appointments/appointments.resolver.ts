@@ -20,8 +20,11 @@ import { RequireDbUser } from 'src/users/decorators/require-db-user.decorator';
 export class AppointmentsResolver {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  @Roles(Role.ADMIN, Role.DOCTOR)
+  @UseGuards(RolesGuard)
   @Mutation(() => Appointment)
   createAppointment(
+    @Args() securityArgs: SecurityClinicArgs,
     @Args('createAppointmentInput')
     createAppointmentInput: CreateAppointmentInput,
   ) {
