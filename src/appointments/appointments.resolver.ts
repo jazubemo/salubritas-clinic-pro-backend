@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { AppointmentsService } from './appointments.service';
 
 import { CreateAppointmentInput } from './dto/create-appointment.input';
@@ -33,13 +33,11 @@ export class AppointmentsResolver {
 
   @Mutation(() => Appointment)
   updateAppointment(
+    @Args('id', { type: () => ID }) id: string,
     @Args('updateAppointmentInput')
     updateAppointmentInput: UpdateAppointmentInput,
   ) {
-    return this.appointmentsService.update(
-      updateAppointmentInput.id,
-      updateAppointmentInput,
-    );
+    return this.appointmentsService.update(id, updateAppointmentInput);
   }
 
   @Roles(Role.ADMIN, Role.DOCTOR, Role.PATIENT)

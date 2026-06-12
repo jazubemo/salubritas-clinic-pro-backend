@@ -28,23 +28,22 @@ export class AppointmentsService {
         clinicId: new Types.ObjectId(createAppointmentInput.clinicId),
         doctorId: new Types.ObjectId(createAppointmentInput.doctorId),
         patientId: new Types.ObjectId(createAppointmentInput.patientId),
+        startTime: new Date(createAppointmentInput.startTime),
+        endTime: new Date(createAppointmentInput.endTime),
       };
 
-      const overlappingAppointment = await this.appointmentModel
-        .findOne({
-          clinicId: newAppointment.clinicId,
-          doctorId: newAppointment.doctorId,
-          status: {
-            $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
-          },
-          // Overlap formula: (StartA < EndB) AND (EndA > StartB)
-          startTime: { $lt: new Date(createAppointmentInput.endTime) },
-          endTime: { $gt: new Date(createAppointmentInput.startTime) },
-        })
-        .lean()
-        .exec();
+      const overlappingAppointment = await this.find({
+        clinicId: newAppointment.clinicId,
+        doctorId: newAppointment.doctorId,
+        status: {
+          $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+        },
+        // Overlap formula: (StartA < EndB) AND (EndA > StartB)
+        startTime: { $lt: newAppointment.endTime },
+        endTime: { $gt: newAppointment.startTime },
+      });
 
-      if (overlappingAppointment) {
+      if (overlappingAppointment.length > 0) {
         throw new BadRequestException(
           'The doctor is already booked or has an overlapping appointment during this time range.',
         );
@@ -62,35 +61,56 @@ export class AppointmentsService {
       );
 
       throw new InternalServerErrorException(
-        'An unexpected error occurred while fetching clinic appointments data.',
+        'An unexpected error occurred while creating this appointment.',
       );
     }
   }
 
-  update(id: number, updateAppointmentInput: UpdateAppointmentInput) {
-    return `This action updates a #${id} appointment`;
-  }
+  async update(id: string, updateAppointmentInput: UpdateAppointmentInput) {
+    const objectId = new Types.ObjectId(id);
 
-  async findOne(filter: Record<string, any>) {
     try {
-      return this.appointmentModel.findOne(filter).lean().exec();
+      const updatedDocument = await this.appointmentModel
+        .findByIdAndUpdate(
+          objectId,
+          { $set: updateAppointmentInput },
+          {
+            new: true,
+          },
+        )
+        .lean()
+        .exec();
+
+      if (!updatedDocument) {
+        throw new BadRequestException(
+          `No appointment found with the provided ID: ${id}`,
+        );
+      }
+
+      return updatedDocument;
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
-        'Failed to fetch these appointments from database',
+        `Failed to update appointment with id ${id}`,
         errorMessage,
       );
-
       throw new InternalServerErrorException(
-        'An unexpected error occurred while retrieving this user.',
+        'An unexpected error occurred while updating the appointment.',
       );
     }
   }
 
-  async find(filter: Record<string, any>): Promise<FlattenMaps<Appointment[]>> {
+  private async find(
+    filters: Record<string, any>,
+  ): Promise<FlattenMaps<Appointment[]>> {
     try {
       const appointments = await this.appointmentModel
-        .find(filter)
+        .find(filters)
+        .sort({ startTime: 1 })
         .lean()
         .exec();
 
@@ -103,7 +123,7 @@ export class AppointmentsService {
       );
 
       throw new InternalServerErrorException(
-        'An unexpected error occurred while retrieving this user.',
+        'An unexpected error occurred while retrieving appointments.',
       );
     }
   }
@@ -128,15 +148,11 @@ export class AppointmentsService {
         query.patientId = new Types.ObjectId(filters?.patientId);
       }
 
-      return await this.appointmentModel
-        .find(query)
-        .sort({ startTime: 1 })
-        .lean()
-        .exec();
+      return await this.find(query);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
-        'Failed to fetch this clinic appointments from database',
+        'Failed to fetch these clinic appointments from database',
         errorMessage,
       );
 

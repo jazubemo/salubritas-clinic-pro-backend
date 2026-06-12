@@ -114,7 +114,7 @@ type Mutation {
     activeClinicId: String!
     createAppointmentInput: CreateAppointmentInput!
   ): Appointment!
-  updateAppointment(updateAppointmentInput: UpdateAppointmentInput!): Appointment!
+  updateAppointment(id: ID!, updateAppointmentInput: UpdateAppointmentInput!): Appointment!
 }
 
 type Query {
@@ -153,44 +153,34 @@ enum Role {
 }
 
 input UpdateAppointmentInput {
-  """Clinic where the appointment was created."""
-  clinicId: ID
-
-  """Exact date when the appointment was created"""
-  createdAt: DateTime
-
   """The doctor that will attend the appointment."""
-  doctorId: ID
+  doctorId: ID!
 
   """The doctor's full name."""
-  doctorName: String
+  doctorName: String!
 
   """Exact date and time when the appointment ends"""
-  endTime: DateTime
-  id: Int!
+  endTime: DateTime!
 
   """
   States if the user who scheduled the appointment is a new user in the system
   """
-  isNewPatient: Boolean
+  isNewPatient: Boolean!
 
   """The user that requested the appointment"""
-  patientId: ID
+  patientId: ID!
 
   """The patient's full name."""
-  patientName: String
+  patientName: String!
 
   """It explains why the appointment was created."""
-  reason: String
+  reason: String!
 
   """Exact date and time when the appointment starts"""
-  startTime: DateTime
+  startTime: DateTime!
 
   """The current operational status of the appointments."""
-  status: AppointmentStatus
-
-  """Date when the appointment was last updated"""
-  updatedAt: DateTime
+  status: AppointmentStatus!
 }
 
 type User {
