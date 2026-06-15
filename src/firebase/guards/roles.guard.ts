@@ -14,6 +14,7 @@ import { Reflector } from '@nestjs/core';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
 import { UserStatus } from 'src/users/enums/user-status.enum';
+import { getUserClinicRolesInObject } from 'src/common/helpers/get-user-clinic-roles-in-object';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -86,10 +87,12 @@ export class RolesGuard implements CanActivate {
     );
 
     if (dbUser) {
-      const dbUserClinic = dbUser.clinicMemberships.find(
-        (membership) =>
-          membership.clinicId.toString() === activeClinicId &&
-          membership.status === UserStatus.ACTIVE,
+      const activeClinicMemberships = dbUser.clinicMemberships.filter(
+        (clinic) => clinic.status === UserStatus.ACTIVE,
+      );
+
+      const dbUserClinic = activeClinicMemberships.find(
+        (membership) => membership.clinicId.toString() === activeClinicId,
       );
 
       if (!dbUserClinic) {
@@ -99,14 +102,7 @@ export class RolesGuard implements CanActivate {
       }
 
       // Note: In Redis we save it as Map for optimization
-      const dbClinicRoles = dbUser.clinicMemberships.reduce(
-        (accumulatorClinicRoles, currentMembership) => {
-          accumulatorClinicRoles[currentMembership.clinicId.toString()] =
-            currentMembership.roles;
-          return accumulatorClinicRoles;
-        },
-        {},
-      );
+      const dbClinicRoles = getUserClinicRolesInObject(activeClinicMemberships);
 
       await this.redisService.setUserRoles(authId, dbClinicRoles);
 

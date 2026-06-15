@@ -12,6 +12,8 @@ import { UsersService } from '../users.service';
 import { REQUIRE_DB_USER_KEY } from '../decorators/require-db-user.decorator';
 import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-request';
 import { UserStatus } from '../enums/user-status.enum';
+import { RedisService } from 'src/redis/redis.service';
+import { getUserClinicRolesInObject } from 'src/common/helpers/get-user-clinic-roles-in-object';
 
 @Injectable()
 export class DbUserInterceptor implements NestInterceptor {
@@ -20,6 +22,7 @@ export class DbUserInterceptor implements NestInterceptor {
   constructor(
     private reflector: Reflector,
     private userService: UsersService,
+    private redisService: RedisService,
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler) {
@@ -51,6 +54,11 @@ export class DbUserInterceptor implements NestInterceptor {
       const activeClinicMemberships = dbUser.clinicMemberships.filter(
         (clinic) => clinic.status === UserStatus.ACTIVE,
       );
+
+      const dbClinicRoles = getUserClinicRolesInObject(activeClinicMemberships);
+
+      // save in redis
+      await this.redisService.setUserRoles(dbUser.authId, dbClinicRoles);
 
       req.user = {
         ...dbUser,
