@@ -1,5 +1,5 @@
 import { ArgsType, Field, ID } from '@nestjs/graphql';
-import { IsISO8601, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 @ArgsType()
 export class AppointmentFiltersArgs {
@@ -7,17 +7,22 @@ export class AppointmentFiltersArgs {
     nullable: false,
     description: 'Filter appointments by started date',
   })
-  @IsISO8601()
+  @IsString()
   @IsNotEmpty()
-  startDate!: string;
+  startRangeString!: string;
 
   @Field(() => String, {
     nullable: false,
     description: 'Filter appointments by end date',
   })
-  @IsISO8601()
+  @IsString()
   @IsNotEmpty()
-  endDate!: string;
+  endRangeString!: string;
+
+  @Field()
+  @IsNotEmpty()
+  @IsString()
+  timezone!: string;
 
   @Field(() => ID, {
     nullable: true,

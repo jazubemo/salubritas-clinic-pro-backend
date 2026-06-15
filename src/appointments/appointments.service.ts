@@ -1,27 +1,69 @@
-import { FlattenMaps, Model, Types } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
+import { ClientSession, Connection, FlattenMaps, Model, Types } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import {
   BadRequestException,
+  ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { CreateAppointmentInput } from './dto/create-appointment.input';
 import { UpdateAppointmentInput } from './dto/update-appointment.input';
-import { AppointmentFilters } from './interfaces/AppointmentFilters';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { Appointment } from './schemas/appointment.schema';
+import { AppointmentFiltersArgs } from './dto/get-appointments-filter.args';
+import { DateTime } from 'luxon';
+import { UsersService } from 'src/users/users.service';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
   constructor(
+    @InjectConnection() private readonly connection: Connection,
     @InjectModel(Appointment.name) private appointmentModel: Model<Appointment>,
+    private readonly usersService: UsersService,
   ) {}
 
+  async getGlobalOverlappingAppointment(
+    appointment: Partial<Appointment>,
+    excludeAppointmentId?: string,
+    session?: ClientSession,
+  ): Promise<Appointment[]> {
+    try {
+      const { doctorId, patientId, startTime, endTime } = appointment;
+      const query: Record<string, any> = {
+        status: {
+          $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+        },
+        $or: [{ doctorId: doctorId }, { patientId: patientId }],
+        startTime: { $lt: endTime },
+        endTime: { $gt: startTime },
+      };
+
+      // Exclude the appointment itself from the overlap check
+      if (excludeAppointmentId) {
+        query._id = { $ne: excludeAppointmentId };
+      }
+
+      return await this.find(query, session);
+    } catch (error) {
+      this.logger.error(
+        `Failed to check overlap for doctor ${appointment.doctorId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('Database check failed.');
+    }
+  }
+
   async create(createAppointmentInput: CreateAppointmentInput) {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
     try {
       const newAppointment = {
         ...createAppointmentInput,
@@ -30,30 +72,66 @@ export class AppointmentsService {
         patientId: new Types.ObjectId(createAppointmentInput.patientId),
         startTime: new Date(createAppointmentInput.startTime),
         endTime: new Date(createAppointmentInput.endTime),
+        doctorName: 'Unknown',
+        patientName: 'Unknown',
       };
+      console.log('newAppointment --- initial', newAppointment);
 
-      const overlappingAppointment = await this.find({
-        clinicId: newAppointment.clinicId,
-        doctorId: newAppointment.doctorId,
-        status: {
-          $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+      const doctor = await this.usersService.findActiveClinicMember(
+        newAppointment.doctorId,
+        newAppointment.clinicId.toString(),
+        Role.DOCTOR,
+        session,
+      );
+
+      const patient = await this.usersService.findActiveClinicMember(
+        newAppointment.patientId,
+        newAppointment.clinicId.toString(),
+        Role.PATIENT,
+        session,
+      );
+
+      // updating respective values
+      newAppointment.doctorName = doctor.lastName;
+      newAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
+
+      const overlappingAppointment = await this.getGlobalOverlappingAppointment(
+        {
+          clinicId: newAppointment.clinicId,
+          patientId: newAppointment.patientId,
+          doctorId: newAppointment.doctorId,
+          startTime: newAppointment.startTime,
+          endTime: newAppointment.endTime,
         },
-        // Overlap formula: (StartA < EndB) AND (EndA > StartB)
-        startTime: { $lt: newAppointment.endTime },
-        endTime: { $gt: newAppointment.startTime },
-      });
+      );
+      console.log('overlappingAppointment', overlappingAppointment);
 
       if (overlappingAppointment.length > 0) {
-        throw new BadRequestException(
-          'The doctor is already booked or has an overlapping appointment during this time range.',
+        const isDoctorBusy =
+          overlappingAppointment[0].doctorId.toString() ===
+          createAppointmentInput.doctorId.toString();
+        const entity = isDoctorBusy ? 'The doctor' : 'The patient';
+
+        throw new ConflictException(
+          `${entity} is already scheduled for an appointment during this timeframe.`,
         );
       }
 
-      return await this.appointmentModel.create(newAppointment);
+      const [newlyCreatedAppointment] = await this.appointmentModel.create(
+        [newAppointment],
+        { session },
+      );
+      console.log('newAppointment', newAppointment);
+
+      await session.commitTransaction();
+      return newlyCreatedAppointment;
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      await session.abortTransaction();
+
+      if (error instanceof HttpException) {
         throw error;
       }
+
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
         'Failed to create this appointment in the database',
@@ -63,11 +141,39 @@ export class AppointmentsService {
       throw new InternalServerErrorException(
         'An unexpected error occurred while creating this appointment.',
       );
+    } finally {
+      await session.endSession();
     }
   }
 
   async update(id: string, updateAppointmentInput: UpdateAppointmentInput) {
     const objectId = new Types.ObjectId(id);
+
+    const existingAppointment = await this.find({ _id: id });
+
+    if (existingAppointment.length === 0) {
+      throw new NotFoundException('User profile not found in database.');
+    }
+
+    if (updateAppointmentInput.startTime || updateAppointmentInput.endTime) {
+      const isOverlappingAppointment =
+        await this.getGlobalOverlappingAppointment({
+          clinicId: existingAppointment[0].clinicId,
+          doctorId: existingAppointment[0].doctorId,
+          startTime: updateAppointmentInput.startTime
+            ? updateAppointmentInput.startTime
+            : existingAppointment[0].startTime,
+          endTime: updateAppointmentInput.endTime
+            ? updateAppointmentInput.endTime
+            : existingAppointment[0].endTime,
+        });
+
+      if (isOverlappingAppointment) {
+        throw new BadRequestException(
+          'The doctor is already booked or has an overlapping appointment during this time range.',
+        );
+      }
+    }
 
     try {
       const updatedDocument = await this.appointmentModel
@@ -106,15 +212,19 @@ export class AppointmentsService {
 
   private async find(
     filters: Record<string, any>,
+    session?: ClientSession,
   ): Promise<FlattenMaps<Appointment[]>> {
     try {
-      const appointments = await this.appointmentModel
+      const query = this.appointmentModel
         .find(filters)
         .sort({ startTime: 1 })
-        .lean()
-        .exec();
+        .lean();
 
-      return appointments;
+      if (session) {
+        query.session(session);
+      }
+
+      return await query.exec();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
@@ -128,13 +238,21 @@ export class AppointmentsService {
     }
   }
 
-  async findAppointments(clinicId: string, filters: AppointmentFilters) {
+  async findAppointments(clinicId: string, filters: AppointmentFiltersArgs) {
     try {
+      const { startRangeString, endRangeString, timezone } = filters;
+
+      const localStart = DateTime.fromISO(startRangeString, { zone: timezone });
+      const localEnd = DateTime.fromISO(endRangeString, { zone: timezone });
+
+      const startRangeUtc = localStart.toJSDate();
+      const endRangeUtc = localEnd.toJSDate();
+
       const query: Record<string, any> = {
         clinicId: new Types.ObjectId(clinicId),
         startTime: {
-          $gte: new Date(filters.startDate),
-          $lte: new Date(filters.endDate),
+          $gte: startRangeUtc,
+          $lte: endRangeUtc,
         },
         status: {
           $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
