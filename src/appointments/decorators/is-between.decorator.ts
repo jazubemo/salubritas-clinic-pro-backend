@@ -18,16 +18,18 @@ export function IsAfter(
       validator: {
         validate(value: string, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints as string[];
-          const relatedValue = (args.object as Record<string, unknown>)[
-            relatedPropertyName
-          ];
 
           const dateToValidate = new Date(value);
-          const relatedDate = new Date(relatedValue as string);
 
+          const relatedDate = new Date(relatedPropertyName);
           if (isNaN(dateToValidate.getTime()) || isNaN(relatedDate.getTime())) {
             return false;
           }
+
+          console.log(
+            'dateToValidate.getTime() > relatedDate.getTime()',
+            dateToValidate.getTime() > relatedDate.getTime(),
+          );
 
           return dateToValidate.getTime() > relatedDate.getTime();
         },
