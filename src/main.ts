@@ -8,7 +8,10 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      transform: true,
+      transform: false,
+      transformOptions: {
+        exposeUnsetFields: false, // Strips out undefined properties completely
+      },
     }),
   );
 

@@ -18,6 +18,7 @@ import { AppointmentFiltersArgs } from './dto/get-appointments-filter.args';
 import { DateTime } from 'luxon';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
+import _ from 'lodash';
 
 @Injectable()
 export class AppointmentsService {
@@ -143,53 +144,82 @@ export class AppointmentsService {
     }
   }
 
+  private areThereAnyChanges(
+    incomingChanges: UpdateAppointmentInput,
+    appointment: Appointment,
+  ) {
+    const existingChanges = _.pick(appointment, Object.keys(incomingChanges));
+
+    return !_.isEqual(incomingChanges, existingChanges);
+  }
+
   async update(id: string, updateAppointmentInput: UpdateAppointmentInput) {
     const objectId = new Types.ObjectId(id);
 
     const existingAppointment = await this.find({ _id: id });
 
     if (existingAppointment.length === 0) {
-      throw new NotFoundException('User profile not found in database.');
+      throw new NotFoundException('Appointment not found in database.');
     }
 
-    if (updateAppointmentInput.startTime || updateAppointmentInput.endTime) {
-      const isOverlappingAppointment = await this.getOverlappingAppointment({
-        clinicId: existingAppointment[0].clinicId,
-        doctorId: existingAppointment[0].doctorId,
-        startTime: updateAppointmentInput.startTime
-          ? updateAppointmentInput.startTime
-          : existingAppointment[0].startTime,
-        endTime: updateAppointmentInput.endTime
-          ? updateAppointmentInput.endTime
-          : existingAppointment[0].endTime,
-      });
+    const hasChanges = this.areThereAnyChanges(
+      updateAppointmentInput,
+      existingAppointment[0],
+    );
 
-      if (isOverlappingAppointment) {
-        throw new BadRequestException(
-          'The doctor is already booked or has an overlapping appointment during this time range.',
-        );
-      }
+    if (!hasChanges) {
+      throw new BadRequestException(
+        `The appointment is already up to date with the provided information.`,
+      );
     }
+
+    if (
+      existingAppointment[0].status === AppointmentStatus.CANCELLED ||
+      existingAppointment[0].status === AppointmentStatus.COMPLETED
+    ) {
+      throw new BadRequestException(
+        `This appointment cannot be modified because it has already been ${existingAppointment[0].status.toLowerCase()}.`,
+      );
+    }
+
+    // if (updateAppointmentInput.startTime || updateAppointmentInput.endTime) {
+    //   const isOverlappingAppointment = await this.getOverlappingAppointment({
+    //     clinicId: existingAppointment[0].clinicId,
+    //     doctorId: existingAppointment[0].doctorId,
+    //     startTime: updateAppointmentInput.startTime
+    //       ? updateAppointmentInput.startTime
+    //       : existingAppointment[0].startTime,
+    //     endTime: updateAppointmentInput.endTime
+    //       ? updateAppointmentInput.endTime
+    //       : existingAppointment[0].endTime,
+    //   });
+
+    //   if (isOverlappingAppointment) {
+    //     throw new BadRequestException(
+    //       'The doctor is already booked or has an overlapping appointment during this time range.',
+    //     );
+    //   }
+    // }
 
     try {
-      const updatedDocument = await this.appointmentModel
-        .findByIdAndUpdate(
-          objectId,
-          { $set: updateAppointmentInput },
-          {
-            new: true,
-          },
-        )
-        .lean()
-        .exec();
+      // const updatedDocument = await this.appointmentModel
+      //   .findByIdAndUpdate(
+      //     objectId,
+      //     { $set: updateAppointmentInput },
+      //     {
+      //       new: true,
+      //     },
+      //   )
+      //   .lean()
+      //   .exec();
 
-      if (!updatedDocument) {
-        throw new BadRequestException(
-          `No appointment found with the provided ID: ${id}`,
-        );
-      }
+      // if (!updatedDocument) {
+      //   throw new BadRequestException(
+      //     `No appointment found with the provided ID: ${id}`,
+      //   );
+      // }
 
-      return updatedDocument;
+      return {};
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;

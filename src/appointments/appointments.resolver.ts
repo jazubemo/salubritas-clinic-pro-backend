@@ -57,6 +57,7 @@ export class AppointmentsResolver {
   @UseGuards(RolesGuard)
   @Mutation(() => Appointment)
   updateAppointment(
+    @Args() securityArgs: SecurityClinicArgs,
     @Args('id', { type: () => ID }) id: string,
     @Args('updateAppointmentInput')
     updateAppointmentInput: UpdateAppointmentInput,

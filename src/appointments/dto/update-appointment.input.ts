@@ -1,50 +1,56 @@
-import { InputType, PartialType, OmitType, Field } from '@nestjs/graphql';
-import { Appointment } from '../schemas/appointment.schema';
+import { InputType, Field } from '@nestjs/graphql';
 import { AppointmentStatus } from '../enums/appointment-status.enum';
-import { IsDate, IsNotIn, IsOptional, MinDate } from 'class-validator';
+import {
+  IsDate,
+  IsNotIn,
+  IsOptional,
+  MinDate,
+  IsBoolean,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsBetween } from '../decorators/is-between.decorator';
+import { IsAfter } from '../decorators/is-after.decorator';
 import {
   MAX_APPOINTMENT_DURATION_MINUTES,
   MIN_APPOINTMENT_DURATION_MINUTES,
 } from 'src/common/constants/app.constants';
-import { IsAfter } from '../decorators/is-after.decorator';
 
 @InputType()
-export class UpdateAppointmentInput extends PartialType(
-  OmitType(
-    Appointment,
-    [
-      '_id',
-      'clinicId',
-      'createdAt',
-      'updatedAt',
-      'patientName',
-      'doctorName',
-      'patientId', // no real use cases. If a doctor doesn't want to attend this patient, a different doctor can be assigned.
-    ] as const,
-    InputType,
-  ),
-) {
-  @Field(() => AppointmentStatus)
+export class UpdateAppointmentInput {
+  @Field(() => String, { nullable: true })
   @IsOptional()
+  @IsString()
+  doctorId?: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isNewPatient?: boolean;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+
+  @Field(() => AppointmentStatus, { nullable: true })
   @IsNotIn([AppointmentStatus.COMPLETED], {
     message:
       "The status 'COMPLETED' cannot be changed manually. This status is assigned automatically when the doctor generates a medical record.",
   })
+  @IsOptional()
   status?: AppointmentStatus;
 
-  @Field(() => Date)
-  @IsOptional()
-  @Type(() => Date)
+  @Field(() => Date, { nullable: true })
+  @Type(() => Date) // Critical for converting GraphQL ISO strings back to JavaScript Date Objects
   @IsDate()
   @MinDate(new Date(), {
     message: `The appointment's start date must be later than right now.`,
   })
+  @IsOptional()
   startTime?: Date;
 
-  @Field(() => Date)
-  @IsOptional()
+  @Field(() => Date, { nullable: true })
   @Type(() => Date)
   @IsDate()
   @IsBetween(
@@ -58,5 +64,6 @@ export class UpdateAppointmentInput extends PartialType(
   @IsAfter('startTime', {
     message: `The appointment's end date must be later than start date.`,
   })
-  endTime!: Date;
+  @IsOptional()
+  endTime?: Date;
 }
