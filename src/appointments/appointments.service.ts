@@ -30,14 +30,15 @@ export class AppointmentsService {
     private readonly usersService: UsersService,
   ) {}
 
-  async getGlobalOverlappingAppointment(
+  async getOverlappingAppointment(
     appointment: Partial<Appointment>,
     excludeAppointmentId?: string,
     session?: ClientSession,
   ): Promise<Appointment[]> {
     try {
-      const { doctorId, patientId, startTime, endTime } = appointment;
+      const { doctorId, patientId, startTime, endTime, clinicId } = appointment;
       const query: Record<string, any> = {
+        clinicId,
         status: {
           $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
         },
@@ -95,15 +96,13 @@ export class AppointmentsService {
       newAppointment.doctorName = doctor.lastName;
       newAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
 
-      const overlappingAppointment = await this.getGlobalOverlappingAppointment(
-        {
-          clinicId: newAppointment.clinicId,
-          patientId: newAppointment.patientId,
-          doctorId: newAppointment.doctorId,
-          startTime: newAppointment.startTime,
-          endTime: newAppointment.endTime,
-        },
-      );
+      const overlappingAppointment = await this.getOverlappingAppointment({
+        clinicId: newAppointment.clinicId,
+        patientId: newAppointment.patientId,
+        doctorId: newAppointment.doctorId,
+        startTime: newAppointment.startTime,
+        endTime: newAppointment.endTime,
+      });
 
       if (overlappingAppointment.length > 0) {
         const isDoctorBusy =
@@ -154,17 +153,16 @@ export class AppointmentsService {
     }
 
     if (updateAppointmentInput.startTime || updateAppointmentInput.endTime) {
-      const isOverlappingAppointment =
-        await this.getGlobalOverlappingAppointment({
-          clinicId: existingAppointment[0].clinicId,
-          doctorId: existingAppointment[0].doctorId,
-          startTime: updateAppointmentInput.startTime
-            ? updateAppointmentInput.startTime
-            : existingAppointment[0].startTime,
-          endTime: updateAppointmentInput.endTime
-            ? updateAppointmentInput.endTime
-            : existingAppointment[0].endTime,
-        });
+      const isOverlappingAppointment = await this.getOverlappingAppointment({
+        clinicId: existingAppointment[0].clinicId,
+        doctorId: existingAppointment[0].doctorId,
+        startTime: updateAppointmentInput.startTime
+          ? updateAppointmentInput.startTime
+          : existingAppointment[0].startTime,
+        endTime: updateAppointmentInput.endTime
+          ? updateAppointmentInput.endTime
+          : existingAppointment[0].endTime,
+      });
 
       if (isOverlappingAppointment) {
         throw new BadRequestException(
