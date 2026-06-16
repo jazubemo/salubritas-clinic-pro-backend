@@ -17,19 +17,21 @@ export function IsAfter(
       options: validationOptions,
       validator: {
         validate(value: string, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints as string[];
-          const relatedValue = (args.object as Record<string, unknown>)[
-            relatedPropertyName
-          ];
+          const [comparisonField] = args.constraints as [string];
+          const comparisonValue = (args.object as Record<string, unknown>)[
+            comparisonField
+          ] as string;
 
-          const dateToValidate = new Date(value);
-          const relatedDate = new Date(relatedValue as string);
+          if (!value || !comparisonValue) return true;
 
-          if (isNaN(dateToValidate.getTime()) || isNaN(relatedDate.getTime())) {
+          const endDateInMilliseconds = new Date(value).getTime();
+          const startDateInMilliseconds = new Date(comparisonValue).getTime();
+
+          if (isNaN(endDateInMilliseconds) || isNaN(startDateInMilliseconds)) {
             return false;
           }
 
-          return dateToValidate.getTime() > relatedDate.getTime();
+          return endDateInMilliseconds > startDateInMilliseconds;
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} must be after ${args.constraints[0]}.`;

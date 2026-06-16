@@ -6,7 +6,7 @@ import {
 import { ONE_MINUTE_IN_MILLISECONDS } from 'src/common/constants/app.constants';
 
 export function IsBetween(
-  relatedPropertyName: string, // e.g., 'startTime'
+  relatedPropertyName: string,
   minBufferMinutes: number,
   maxBufferMinutes: number,
   validationOptions?: ValidationOptions,
@@ -20,15 +20,20 @@ export function IsBetween(
       options: validationOptions,
       validator: {
         validate(value: string, args: ValidationArguments) {
-          const [startTimePropertyName, minBuffer, maxBuffer] =
-            args.constraints as [string, number, number];
-          const startTimeValue = (args.object as Record<string, unknown>)[
-            startTimePropertyName
+          const [comparisonField, minBuffer, maxBuffer] = args.constraints as [
+            string,
+            number,
+            number,
           ];
+          const comparisonValue = (args.object as Record<string, unknown>)[
+            comparisonField
+          ];
+
+          if (!value || !comparisonValue) return true;
 
           const startTimeInMilliseconds = new Date(value).getTime();
           const endTimeInMilliseconds = new Date(
-            startTimeValue as string,
+            comparisonValue as string,
           ).getTime();
 
           if (isNaN(startTimeInMilliseconds) || isNaN(endTimeInMilliseconds)) {
