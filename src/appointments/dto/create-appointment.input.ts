@@ -4,6 +4,7 @@ import { Appointment } from '../schemas/appointment.schema';
 import { IsDate, IsIn, IsNotEmpty, MinDate } from 'class-validator';
 import { AppointmentStatus } from '../enums/appointment-status.enum';
 import { IsAfter } from '../decorators/is-after.decorator';
+import { IsBetween } from '../decorators/is-between.decorator';
 
 @InputType()
 export class CreateAppointmentInput extends OmitType(
@@ -22,6 +23,9 @@ export class CreateAppointmentInput extends OmitType(
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
+  @IsBetween('startTime', 15, 60, {
+    message: `The appointment should last between 15 and 60 minutes`,
+  })
   @IsAfter('startTime', {
     message: `The appointment's end date must be later than start date.`,
   })

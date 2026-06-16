@@ -3,38 +3,50 @@ import {
   ValidationOptions,
   ValidationArguments,
 } from 'class-validator';
+import { ONE_MINUTE_IN_MILLISECONDS } from 'src/common/constants/app.constants';
 
-export function IsAfter(
-  property: string,
+export function IsBetween(
+  relatedPropertyName: string, // e.g., 'startTime'
+  minBufferMinutes: number,
+  maxBufferMinutes: number,
   validationOptions?: ValidationOptions,
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: 'isAfter',
+      name: 'isBetween',
       target: object.constructor,
       propertyName: propertyName,
-      constraints: [property],
+      constraints: [relatedPropertyName, minBufferMinutes, maxBufferMinutes],
       options: validationOptions,
       validator: {
         validate(value: string, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints as string[];
+          const [startTimePropertyName, minBuffer, maxBuffer] =
+            args.constraints as [string, number, number];
+          const startTimeValue = (args.object as Record<string, unknown>)[
+            startTimePropertyName
+          ];
 
-          const dateToValidate = new Date(value);
+          const startTimeInMilliseconds = new Date(value).getTime();
+          const endTimeInMilliseconds = new Date(
+            startTimeValue as string,
+          ).getTime();
 
-          const relatedDate = new Date(relatedPropertyName);
-          if (isNaN(dateToValidate.getTime()) || isNaN(relatedDate.getTime())) {
+          if (isNaN(startTimeInMilliseconds) || isNaN(endTimeInMilliseconds)) {
             return false;
           }
 
-          console.log(
-            'dateToValidate.getTime() > relatedDate.getTime()',
-            dateToValidate.getTime() > relatedDate.getTime(),
-          );
+          const differenceInMinutes =
+            Math.abs(startTimeInMilliseconds - endTimeInMilliseconds) /
+            ONE_MINUTE_IN_MILLISECONDS;
 
-          return dateToValidate.getTime() > relatedDate.getTime();
+          return (
+            differenceInMinutes >= minBuffer && differenceInMinutes <= maxBuffer
+          );
         },
         defaultMessage(args: ValidationArguments) {
-          return `${args.property} must be after ${args.constraints[0]}.`;
+          const [startTimePropertyName, minBuffer, maxBuffer] =
+            args.constraints as [string, number, number];
+          return `${args.property} time difference from ${startTimePropertyName} must be between ${minBuffer} and ${maxBuffer} minutes.`;
         },
       },
     });
