@@ -14,6 +14,7 @@ import { SecurityClinicArgs } from 'src/common/security/clinic-security.args';
 import { CurrentUser } from 'src/users/decorators/current-user.decorator';
 import { User } from 'src/users/schemas/user.schema';
 import { RequireDbUser } from 'src/users/decorators/require-db-user.decorator';
+import { UserStatus } from 'src/users/enums/user-status.enum';
 
 @Resolver(() => Appointment)
 @UseGuards(AuthGuard)
@@ -23,11 +24,32 @@ export class AppointmentsResolver {
   @Roles(Role.ADMIN, Role.DOCTOR)
   @UseGuards(RolesGuard)
   @Mutation(() => Appointment)
+  @RequireDbUser()
   createAppointment(
     @Args() securityArgs: SecurityClinicArgs,
     @Args('createAppointmentInput')
     createAppointmentInput: CreateAppointmentInput,
+    @CurrentUser() user: User,
   ) {
+    const clinicMembership = user.clinicMemberships.find(
+      (clinic) =>
+        clinic.clinicId.toString() ===
+          createAppointmentInput.clinicId.toString() &&
+        clinic.status === UserStatus.ACTIVE,
+    );
+
+    if (!clinicMembership) {
+      throw new UnauthorizedException('You do not belong to this clinic.');
+    }
+
+    // double-check security
+    if (clinicMembership.roles.includes(Role.ADMIN)) {
+      // No modifications to filters needed
+    } else if (clinicMembership.roles.includes(Role.DOCTOR)) {
+      createAppointmentInput.doctorId = user._id;
+    } else {
+      throw new UnauthorizedException('Access Denied.');
+    }
     return this.appointmentsService.create(createAppointmentInput);
   }
 
@@ -55,7 +77,9 @@ export class AppointmentsResolver {
 
     // double-checking security
     const clinicMembership = user.clinicMemberships.find(
-      (clinic) => clinic.clinicId.toString() === activeClinicId,
+      (clinic) =>
+        clinic.clinicId.toString() === activeClinicId &&
+        clinic.status === UserStatus.ACTIVE,
     );
 
     if (!clinicMembership) {
