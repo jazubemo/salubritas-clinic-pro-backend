@@ -111,7 +111,7 @@ export class UsersService {
 
       if (!clinicMembership) {
         throw new ForbiddenException(
-          `This user is not a member of the requested clinic.`,
+          `This user is not an active member of the requested clinic.`,
         );
       }
 

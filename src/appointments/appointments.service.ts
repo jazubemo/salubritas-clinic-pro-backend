@@ -13,7 +13,7 @@ import {
 import { CreateAppointmentInput } from './dto/create-appointment.input';
 import { UpdateAppointmentInput } from './dto/update-appointment.input';
 import { AppointmentStatus } from './enums/appointment-status.enum';
-import { Appointment } from './schemas/appointment.schema';
+import { Appointment, AppointmentDocument } from './schemas/appointment.schema';
 import { AppointmentFiltersArgs } from './dto/get-appointments-filter.args';
 import { DateTime } from 'luxon';
 import { UsersService } from 'src/users/users.service';
@@ -25,7 +25,8 @@ export class AppointmentsService {
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
-    @InjectModel(Appointment.name) private appointmentModel: Model<Appointment>,
+    @InjectModel(Appointment.name)
+    private appointmentModel: Model<AppointmentDocument>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -75,7 +76,6 @@ export class AppointmentsService {
         doctorName: 'Unknown',
         patientName: 'Unknown',
       };
-      console.log('newAppointment --- initial', newAppointment);
 
       const doctor = await this.usersService.findActiveClinicMember(
         newAppointment.doctorId,
@@ -104,7 +104,6 @@ export class AppointmentsService {
           endTime: newAppointment.endTime,
         },
       );
-      console.log('overlappingAppointment', overlappingAppointment);
 
       if (overlappingAppointment.length > 0) {
         const isDoctorBusy =
@@ -121,7 +120,6 @@ export class AppointmentsService {
         [newAppointment],
         { session },
       );
-      console.log('newAppointment', newAppointment);
 
       await session.commitTransaction();
       return newlyCreatedAppointment;

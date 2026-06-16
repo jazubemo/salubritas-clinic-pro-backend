@@ -1,18 +1,22 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Field, ObjectType, ID } from '@nestjs/graphql';
-import { Document, Types } from 'mongoose';
+import { Document, HydratedDocument, Types } from 'mongoose';
 import { AppointmentStatus } from '../enums/appointment-status.enum';
+import { IsNotEmpty } from 'class-validator';
+
+export type AppointmentDocument = HydratedDocument<Appointment>;
 
 @ObjectType()
 @Schema({ timestamps: true })
-export class Appointment extends Document {
+export class Appointment {
   @Field(() => ID)
-  declare _id: Types.ObjectId;
+  _id!: Types.ObjectId;
 
   @Field(() => ID, {
     description: 'Clinic where the appointment was created.',
   })
   @Prop({ type: Types.ObjectId, required: true })
+  @IsNotEmpty()
   clinicId!: Types.ObjectId;
 
   @Field({
@@ -49,16 +53,19 @@ export class Appointment extends Document {
       'States if the user who scheduled the appointment is a new user in the system',
   })
   @Prop({ required: true })
+  @IsNotEmpty()
   isNewPatient!: boolean;
 
-  @Field({
+  @Field(() => String, {
     description: 'It explains why the appointment was created.',
+    nullable: true,
   })
-  @Prop({ required: false, nullable: true })
+  @Prop({ required: false })
   reason?: string;
 
   @Field(() => ID, { description: 'The user that requested the appointment' })
   @Prop({ type: Types.ObjectId, required: true })
+  @IsNotEmpty()
   patientId!: Types.ObjectId;
 
   @Field({
@@ -71,6 +78,7 @@ export class Appointment extends Document {
     description: 'The doctor that will attend the appointment.',
   })
   @Prop({ type: Types.ObjectId, required: true })
+  @IsNotEmpty()
   doctorId!: Types.ObjectId;
 
   @Field({

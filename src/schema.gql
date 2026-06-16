@@ -32,7 +32,7 @@ type Appointment {
   patientName: String!
 
   """It explains why the appointment was created."""
-  reason: String!
+  reason: String
 
   """Exact date and time when the appointment starts"""
   startTime: DateTime!
@@ -69,8 +69,6 @@ input CreateAppointmentInput {
 
   """The doctor that will attend the appointment."""
   doctorId: ID!
-
-  """Exact date and time when the appointment ends"""
   endTime: DateTime!
 
   """
@@ -80,14 +78,8 @@ input CreateAppointmentInput {
 
   """The user that requested the appointment"""
   patientId: ID!
-
-  """It explains why the appointment was created."""
-  reason: String!
-
-  """Exact date and time when the appointment starts"""
+  reason: String
   startTime: DateTime!
-
-  """The current operational status of the appointments."""
   status: AppointmentStatus!
 }
 
