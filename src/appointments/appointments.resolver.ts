@@ -31,6 +31,8 @@ export class AppointmentsResolver {
     return this.appointmentsService.create(createAppointmentInput);
   }
 
+  @Roles(Role.ADMIN, Role.DOCTOR)
+  @UseGuards(RolesGuard)
   @Mutation(() => Appointment)
   updateAppointment(
     @Args('id', { type: () => ID }) id: string,
