@@ -1,5 +1,6 @@
 import { ArgsType, Field, ID } from '@nestjs/graphql';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { APP_TIMEZONE } from 'src/common/constants/app.constants';
 
 @ArgsType()
 export class AppointmentFiltersArgs {
@@ -19,7 +20,9 @@ export class AppointmentFiltersArgs {
   @IsNotEmpty()
   endRangeString!: string;
 
-  @Field()
+  @Field(() => String, {
+    defaultValue: APP_TIMEZONE,
+  })
   @IsNotEmpty()
   @IsString()
   timezone!: string;
