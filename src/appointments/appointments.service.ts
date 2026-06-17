@@ -1,4 +1,4 @@
-import { ClientSession, Connection, FlattenMaps, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import {
   BadRequestException,
@@ -20,6 +20,10 @@ import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
 import _ from 'lodash';
 
+export type AppointmentChangesWithDoctorData = UpdateAppointmentInput & {
+  doctorName?: string;
+};
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -33,11 +37,12 @@ export class AppointmentsService {
 
   async getOverlappingAppointment(
     appointment: Partial<Appointment>,
-    excludeAppointmentId?: string,
+    excludeAppointmentId?: string | Types.ObjectId,
     session?: ClientSession,
   ): Promise<Appointment[]> {
     try {
       const { doctorId, patientId, startTime, endTime, clinicId } = appointment;
+
       const query: Record<string, any> = {
         clinicId,
         status: {
@@ -79,14 +84,14 @@ export class AppointmentsService {
         patientName: 'Unknown',
       };
 
-      const doctor = await this.usersService.findActiveClinicMember(
+      const doctor = await this.usersService.fetchAuthorizedUser(
         newAppointment.doctorId,
         newAppointment.clinicId.toString(),
         Role.DOCTOR,
         session,
       );
 
-      const patient = await this.usersService.findActiveClinicMember(
+      const patient = await this.usersService.fetchAuthorizedUser(
         newAppointment.patientId,
         newAppointment.clinicId.toString(),
         Role.PATIENT,
@@ -153,18 +158,134 @@ export class AppointmentsService {
     return !_.isEqual(incomingChanges, existingChanges);
   }
 
-  async update(id: string, updateAppointmentInput: UpdateAppointmentInput) {
+  private async updateMetadata(
+    objectId: Types.ObjectId,
+    updateAppointmentInput: UpdateAppointmentInput,
+  ): Promise<Appointment> {
+    return await this.update(objectId, updateAppointmentInput);
+  }
+
+  private async routeAppointmentRequest(
+    objectId: Types.ObjectId,
+    updateAppointmentInput: UpdateAppointmentInput,
+    existingAppointment: Appointment,
+  ): Promise<Appointment> {
+    if (
+      updateAppointmentInput.status ||
+      updateAppointmentInput.isNewPatient ||
+      updateAppointmentInput.reason
+    ) {
+      return await this.updateMetadata(objectId, updateAppointmentInput);
+    }
+
+    return this.reschedule(
+      objectId,
+      updateAppointmentInput,
+      existingAppointment,
+    );
+  }
+
+  private async reschedule(
+    objectId: Types.ObjectId,
+    incomingAppointmentChanges: UpdateAppointmentInput,
+    existingAppointment: Appointment,
+  ) {
+    const {
+      startTime,
+      endTime,
+      doctorId: incomingDoctorId,
+    } = incomingAppointmentChanges;
+
+    const internalIncomingChanges: AppointmentChangesWithDoctorData = {
+      ...incomingAppointmentChanges,
+    };
+
+    const { clinicId, doctorId } = existingAppointment;
+
+    const existingDoctorObjectId = new Types.ObjectId(doctorId);
+    const incomingDoctorObjectId = new Types.ObjectId(incomingDoctorId);
+
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
+    try {
+      // validations
+      if (incomingAppointmentChanges.doctorId) {
+        const doctor = await this.usersService.fetchAuthorizedUser(
+          incomingDoctorObjectId,
+          clinicId.toString(),
+          Role.DOCTOR,
+          session,
+        );
+        internalIncomingChanges.doctorName = `${doctor.firstName} ${doctor.lastName}`;
+      }
+
+      const overlappingAppointment = await this.getOverlappingAppointment(
+        {
+          clinicId: existingAppointment.clinicId,
+          doctorId: incomingDoctorObjectId
+            ? incomingDoctorObjectId
+            : existingDoctorObjectId,
+          startTime: startTime,
+          endTime: endTime,
+        },
+        existingAppointment._id,
+        session,
+      );
+
+      if (overlappingAppointment.length > 0) {
+        throw new BadRequestException(
+          'The doctor is already booked or has an overlapping appointment during this time range.',
+        );
+      }
+
+      const updatedDocument = await this.update(
+        objectId,
+        internalIncomingChanges,
+        session,
+      );
+
+      await session.commitTransaction();
+
+      return updatedDocument;
+    } catch (error) {
+      await session.abortTransaction();
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        'Failed to update this appointment in the database',
+        errorMessage,
+      );
+
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while updating this appointment.',
+      );
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async updateAppointment(
+    id: string,
+    updateAppointmentInput: UpdateAppointmentInput,
+  ) {
     const objectId = new Types.ObjectId(id);
 
-    const existingAppointment = await this.find({ _id: id });
+    const existingAppointments = await this.find({ _id: id });
 
-    if (existingAppointment.length === 0) {
-      throw new NotFoundException('Appointment not found in database.');
+    if (existingAppointments.length === 0) {
+      throw new NotFoundException('Appointment was not found in database.');
     }
+
+    const existingAppointment = existingAppointments[0];
 
     const hasChanges = this.areThereAnyChanges(
       updateAppointmentInput,
-      existingAppointment[0],
+      existingAppointment,
     );
 
     if (!hasChanges) {
@@ -174,54 +295,23 @@ export class AppointmentsService {
     }
 
     if (
-      existingAppointment[0].status === AppointmentStatus.CANCELLED ||
-      existingAppointment[0].status === AppointmentStatus.COMPLETED
+      existingAppointment.status === AppointmentStatus.CANCELLED ||
+      existingAppointment.status === AppointmentStatus.COMPLETED
     ) {
       throw new BadRequestException(
-        `This appointment cannot be modified because it has already been ${existingAppointment[0].status.toLowerCase()}.`,
+        `This appointment cannot be modified because it has already been ${existingAppointment.status.toLowerCase()}.`,
       );
     }
 
-    // if (updateAppointmentInput.startTime || updateAppointmentInput.endTime) {
-    //   const isOverlappingAppointment = await this.getOverlappingAppointment({
-    //     clinicId: existingAppointment[0].clinicId,
-    //     doctorId: existingAppointment[0].doctorId,
-    //     startTime: updateAppointmentInput.startTime
-    //       ? updateAppointmentInput.startTime
-    //       : existingAppointment[0].startTime,
-    //     endTime: updateAppointmentInput.endTime
-    //       ? updateAppointmentInput.endTime
-    //       : existingAppointment[0].endTime,
-    //   });
-
-    //   if (isOverlappingAppointment) {
-    //     throw new BadRequestException(
-    //       'The doctor is already booked or has an overlapping appointment during this time range.',
-    //     );
-    //   }
-    // }
-
     try {
-      // const updatedDocument = await this.appointmentModel
-      //   .findByIdAndUpdate(
-      //     objectId,
-      //     { $set: updateAppointmentInput },
-      //     {
-      //       new: true,
-      //     },
-      //   )
-      //   .lean()
-      //   .exec();
-
-      // if (!updatedDocument) {
-      //   throw new BadRequestException(
-      //     `No appointment found with the provided ID: ${id}`,
-      //   );
-      // }
-
-      return {};
+      const updatedDocument = await this.routeAppointmentRequest(
+        objectId,
+        updateAppointmentInput,
+        existingAppointment,
+      );
+      return updatedDocument;
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -232,34 +322,6 @@ export class AppointmentsService {
       );
       throw new InternalServerErrorException(
         'An unexpected error occurred while updating the appointment.',
-      );
-    }
-  }
-
-  private async find(
-    filters: Record<string, any>,
-    session?: ClientSession,
-  ): Promise<FlattenMaps<Appointment[]>> {
-    try {
-      const query = this.appointmentModel
-        .find(filters)
-        .sort({ startTime: 1 })
-        .lean();
-
-      if (session) {
-        query.session(session);
-      }
-
-      return await query.exec();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.stack : String(error);
-      this.logger.error(
-        'Failed to fetch these appointments from database',
-        errorMessage,
-      );
-
-      throw new InternalServerErrorException(
-        'An unexpected error occurred while retrieving appointments.',
       );
     }
   }
@@ -302,6 +364,77 @@ export class AppointmentsService {
 
       throw new InternalServerErrorException(
         'An unexpected error occurred while fetching clinic appointments data.',
+      );
+    }
+  }
+
+  /** CRUD ENDPOINTS */
+  private async update(
+    objectId: Types.ObjectId,
+    updateAppointmentInput: UpdateAppointmentInput,
+    session?: ClientSession,
+  ) {
+    try {
+      const query = this.appointmentModel
+        .findByIdAndUpdate(
+          objectId,
+          { $set: updateAppointmentInput },
+          {
+            returnDocument: 'after',
+          },
+        )
+        .lean();
+
+      if (session) {
+        query.session(session);
+      }
+
+      const updatedDocument = await query.exec();
+
+      if (!updatedDocument) {
+        throw new BadRequestException(
+          `No appointment found with the provided ID: ${objectId}`,
+        );
+      }
+
+      return updatedDocument;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        'Failed to update this appointment from database',
+        errorMessage,
+      );
+
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while updating this appointment.',
+      );
+    }
+  }
+
+  private async find(
+    filters: Record<string, any>,
+    session?: ClientSession,
+  ): Promise<Appointment[]> {
+    try {
+      const query = this.appointmentModel
+        .find(filters)
+        .sort({ startTime: 1 })
+        .lean();
+
+      if (session) {
+        query.session(session);
+      }
+
+      return await query.exec();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        'Failed to fetch these appointments from database',
+        errorMessage,
+      );
+
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while retrieving appointments.',
       );
     }
   }

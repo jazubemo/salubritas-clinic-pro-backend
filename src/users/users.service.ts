@@ -82,7 +82,7 @@ export class UsersService {
     }
   }
 
-  async findActiveClinicMember(
+  async fetchAuthorizedUser(
     userId: Types.ObjectId,
     requestingClinicId: string,
     expectedRole: Role,
@@ -98,9 +98,7 @@ export class UsersService {
       );
 
       if (!user) {
-        throw new NotFoundException(
-          `User whose role is (${expectedRole}) not found`,
-        );
+        throw new NotFoundException(`User with id (${userId}) not found`);
       }
 
       const clinicMembership = user.clinicMemberships.find(

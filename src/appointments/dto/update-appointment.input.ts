@@ -1,14 +1,13 @@
 import { InputType, Field } from '@nestjs/graphql';
 import { AppointmentStatus } from '../enums/appointment-status.enum';
 import {
-  IsDate,
   IsNotIn,
   IsOptional,
   MinDate,
   IsBoolean,
   IsString,
+  IsDate,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { IsBetween } from '../decorators/is-between.decorator';
 import { IsAfter } from '../decorators/is-after.decorator';
 import {
@@ -42,7 +41,6 @@ export class UpdateAppointmentInput {
   status?: AppointmentStatus;
 
   @Field(() => Date, { nullable: true })
-  @Type(() => Date) // Critical for converting GraphQL ISO strings back to JavaScript Date Objects
   @IsDate()
   @MinDate(new Date(), {
     message: `The appointment's start date must be later than right now.`,
@@ -51,7 +49,6 @@ export class UpdateAppointmentInput {
   startTime?: Date;
 
   @Field(() => Date, { nullable: true })
-  @Type(() => Date)
   @IsDate()
   @IsBetween(
     'startTime',

@@ -62,7 +62,10 @@ export class AppointmentsResolver {
     @Args('updateAppointmentInput')
     updateAppointmentInput: UpdateAppointmentInput,
   ) {
-    return this.appointmentsService.update(id, updateAppointmentInput);
+    return this.appointmentsService.updateAppointment(
+      id,
+      updateAppointmentInput,
+    );
   }
 
   @Roles(Role.ADMIN, Role.DOCTOR, Role.PATIENT)

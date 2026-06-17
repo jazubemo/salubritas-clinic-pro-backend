@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   registerDecorator,
   ValidationOptions,
@@ -27,17 +28,27 @@ export function IsBetween(
           ];
           const comparisonValue = (args.object as Record<string, unknown>)[
             comparisonField
-          ];
+          ] as string;
 
-          if (!value || !comparisonValue) return true;
+          if (!value || !comparisonValue) {
+            throw new BadRequestException(
+              'Both startTime and endTime are required properties for this action.',
+            );
+          }
 
           const startTimeInMilliseconds = new Date(value).getTime();
-          const endTimeInMilliseconds = new Date(
-            comparisonValue as string,
-          ).getTime();
+          const endTimeInMilliseconds = new Date(comparisonValue).getTime();
 
-          if (isNaN(startTimeInMilliseconds) || isNaN(endTimeInMilliseconds)) {
-            return false;
+          if (isNaN(startTimeInMilliseconds)) {
+            throw new BadRequestException(
+              `The provided startTime value ("${comparisonValue}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ssZ").`,
+            );
+          }
+
+          if (isNaN(endTimeInMilliseconds)) {
+            throw new BadRequestException(
+              `The provided endTime value ("${value}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ssZ").`,
+            );
           }
 
           const differenceInMinutes =
