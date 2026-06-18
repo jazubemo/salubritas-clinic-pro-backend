@@ -1,9 +1,9 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { AppointmentsService } from './appointments.service';
 
-import { CreateAppointmentInput } from './dto/create-appointment.input';
-import { UpdateAppointmentInput } from './dto/update-appointment.input';
-import { AppointmentFiltersArgs } from './dto/get-appointments-filter.args';
+import { CreateAppointmentInput } from './inputs/create-appointment.input';
+import { UpdateAppointmentInput } from './inputs/update-appointment.input';
+import { AppointmentFiltersArgs } from './args/get-appointments-filter.args';
 import { Appointment } from './schemas/appointment.schema';
 import { Roles } from 'src/firebase/decorators/roles.decorator';
 import { UnauthorizedException, UseGuards } from '@nestjs/common';

@@ -10,11 +10,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { CreateAppointmentInput } from './dto/create-appointment.input';
-import { UpdateAppointmentInput } from './dto/update-appointment.input';
+import { CreateAppointmentInput } from './inputs/create-appointment.input';
+import { UpdateAppointmentInput } from './inputs/update-appointment.input';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { Appointment, AppointmentDocument } from './schemas/appointment.schema';
-import { AppointmentFiltersArgs } from './dto/get-appointments-filter.args';
+import { AppointmentFiltersArgs } from './args/get-appointments-filter.args';
 import { DateTime } from 'luxon';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
