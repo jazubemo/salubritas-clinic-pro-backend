@@ -118,7 +118,7 @@ type Query {
 
     """Filter appointments by started date"""
     startRangeString: String!
-    timezone: String!
+    timezone: String! = "America/Tegucigalpa"
   ): [Appointment!]!
   findAll(
     """Clinic ID for guard permission validation"""

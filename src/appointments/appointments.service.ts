@@ -170,19 +170,20 @@ export class AppointmentsService {
     updateAppointmentInput: UpdateAppointmentInput,
     existingAppointment: Appointment,
   ): Promise<Appointment> {
-    if (
-      updateAppointmentInput.status ||
-      updateAppointmentInput.isNewPatient ||
-      updateAppointmentInput.reason
-    ) {
-      return await this.updateMetadata(objectId, updateAppointmentInput);
+    const hasRescheduleUpdates =
+      updateAppointmentInput.startTime ||
+      updateAppointmentInput.endTime ||
+      updateAppointmentInput.doctorId;
+
+    if (hasRescheduleUpdates) {
+      return this.reschedule(
+        objectId,
+        updateAppointmentInput,
+        existingAppointment,
+      );
     }
 
-    return this.reschedule(
-      objectId,
-      updateAppointmentInput,
-      existingAppointment,
-    );
+    return this.updateMetadata(objectId, updateAppointmentInput);
   }
 
   private async reschedule(
@@ -191,8 +192,8 @@ export class AppointmentsService {
     existingAppointment: Appointment,
   ) {
     const {
-      startTime,
-      endTime,
+      startTime: incomingStartTime,
+      endTime: incomingEndTime,
       doctorId: incomingDoctorId,
     } = incomingAppointmentChanges;
 
@@ -200,10 +201,20 @@ export class AppointmentsService {
       ...incomingAppointmentChanges,
     };
 
-    const { clinicId, doctorId } = existingAppointment;
+    const {
+      clinicId,
+      _id: existingAppointmentId,
+      doctorId: existingDoctorId,
+      startTime: existingStartTime,
+      endTime: existingEndTime,
+    } = existingAppointment;
 
-    const existingDoctorObjectId = new Types.ObjectId(doctorId);
-    const incomingDoctorObjectId = new Types.ObjectId(incomingDoctorId);
+    const doctorObjectId = incomingDoctorId
+      ? new Types.ObjectId(incomingDoctorId)
+      : new Types.ObjectId(existingDoctorId);
+
+    const startTime = incomingStartTime ? incomingStartTime : existingStartTime;
+    const endTime = incomingEndTime ? incomingEndTime : existingEndTime;
 
     const session = await this.connection.startSession();
     session.startTransaction();
@@ -212,7 +223,7 @@ export class AppointmentsService {
       // validations
       if (incomingAppointmentChanges.doctorId) {
         const doctor = await this.usersService.fetchAuthorizedUser(
-          incomingDoctorObjectId,
+          doctorObjectId,
           clinicId.toString(),
           Role.DOCTOR,
           session,
@@ -222,14 +233,12 @@ export class AppointmentsService {
 
       const overlappingAppointment = await this.getOverlappingAppointment(
         {
-          clinicId: existingAppointment.clinicId,
-          doctorId: incomingDoctorObjectId
-            ? incomingDoctorObjectId
-            : existingDoctorObjectId,
+          clinicId: clinicId,
+          doctorId: doctorObjectId,
           startTime: startTime,
           endTime: endTime,
         },
-        existingAppointment._id,
+        existingAppointmentId,
         session,
       );
 
@@ -269,22 +278,12 @@ export class AppointmentsService {
     }
   }
 
-  async updateAppointment(
-    id: string,
-    updateAppointmentInput: UpdateAppointmentInput,
+  private ensureAppointmentCanBeUpdated(
+    incomingChanges: UpdateAppointmentInput,
+    existingAppointment: Appointment,
   ) {
-    const objectId = new Types.ObjectId(id);
-
-    const existingAppointments = await this.find({ _id: id });
-
-    if (existingAppointments.length === 0) {
-      throw new NotFoundException('Appointment was not found in database.');
-    }
-
-    const existingAppointment = existingAppointments[0];
-
     const hasChanges = this.areThereAnyChanges(
-      updateAppointmentInput,
+      incomingChanges,
       existingAppointment,
     );
 
@@ -302,10 +301,26 @@ export class AppointmentsService {
         `This appointment cannot be modified because it has already been ${existingAppointment.status.toLowerCase()}.`,
       );
     }
+  }
+
+  async updateAppointment(
+    id: string,
+    updateAppointmentInput: UpdateAppointmentInput,
+  ) {
+    const [existingAppointment] = await this.find({ _id: id });
+
+    if (existingAppointment) {
+      throw new NotFoundException('Appointment was not found in database.');
+    }
+
+    this.ensureAppointmentCanBeUpdated(
+      updateAppointmentInput,
+      existingAppointment,
+    );
 
     try {
       const updatedDocument = await this.routeAppointmentRequest(
-        objectId,
+        new Types.ObjectId(id),
         updateAppointmentInput,
         existingAppointment,
       );
