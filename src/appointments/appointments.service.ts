@@ -15,7 +15,6 @@ import { UpdateAppointmentInput } from './inputs/update-appointment.input';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { Appointment, AppointmentDocument } from './schemas/appointment.schema';
 import { AppointmentFiltersArgs } from './args/get-appointments-filter.args';
-import { DateTime } from 'luxon';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
 import _ from 'lodash';
@@ -346,10 +345,14 @@ export class AppointmentsService {
 
   async findAppointments(clinicId: string, filters: AppointmentFiltersArgs) {
     try {
-      const { startRangeString, endRangeString } = filters;
+      const { startRange, endRange, doctorId, patientId } = filters;
 
-      const startRangeUtc = TimezoneUtil.toUTC(startRangeString);
-      const endRangeUtc = TimezoneUtil.toUTC(endRangeString);
+      const startInputUtc = TimezoneUtil.toUTC(startRange);
+      const endInputUtc = TimezoneUtil.toUTC(endRange);
+
+      const isChronological = startInputUtc < endInputUtc;
+      const startRangeUtc = isChronological ? startInputUtc : endInputUtc;
+      const endRangeUtc = isChronological ? endInputUtc : startInputUtc;
 
       const query: Record<string, any> = {
         clinicId: new Types.ObjectId(clinicId),
@@ -361,11 +364,12 @@ export class AppointmentsService {
           $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
         },
       };
-      if (filters?.doctorId) {
+
+      if (doctorId) {
         query.doctorId = new Types.ObjectId(filters?.doctorId);
       }
 
-      if (filters?.patientId) {
+      if (patientId) {
         query.patientId = new Types.ObjectId(filters?.patientId);
       }
 

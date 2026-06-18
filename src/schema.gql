@@ -111,13 +111,13 @@ type Query {
     doctorId: ID
 
     """Filter appointments by end date"""
-    endRangeString: String!
+    endRange: String!
 
     """Filter appointments by a specific patient ID"""
     patientId: ID
 
     """Filter appointments by started date"""
-    startRangeString: String!
+    startRange: String!
   ): [Appointment!]!
   findAll(
     """Clinic ID for guard permission validation"""
