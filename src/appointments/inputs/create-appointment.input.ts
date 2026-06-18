@@ -16,6 +16,7 @@ import {
   MAX_APPOINTMENT_DURATION_MINUTES,
   MIN_APPOINTMENT_DURATION_MINUTES,
 } from 'src/common/constants/app.constants';
+import { IsAfterNowHonduras } from '../decorators/is-after-now-honduras.decorator';
 
 @InputType()
 export class CreateAppointmentInput extends OmitType(
@@ -36,8 +37,8 @@ export class CreateAppointmentInput extends OmitType(
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(new Date(), {
-    message: `The appointment's start date must be later than right now.`,
+  @IsAfterNowHonduras({
+    message: `The appointment's start date must be later than right now in Honduras time.`,
   })
   startTime!: Date;
 

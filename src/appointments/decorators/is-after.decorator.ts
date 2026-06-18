@@ -34,13 +34,13 @@ export function IsAfter(
 
           if (isNaN(startTimeInMilliseconds)) {
             throw new BadRequestException(
-              `The provided startTime value ("${comparisonValue}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ssZ").`,
+              `The provided startTime value ("${comparisonValue}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ss").`,
             );
           }
 
           if (isNaN(endTimeInMilliseconds)) {
             throw new BadRequestException(
-              `The provided endTime value ("${value}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ssZ").`,
+              `The provided endTime value ("${value}") is not a valid date string. Please use a valid ISO 8601 format (e.g., "YYYY-MM-DDTHH:mm:ss").`,
             );
           }
 

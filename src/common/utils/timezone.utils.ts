@@ -18,6 +18,14 @@ export class TimezoneUtil {
       .toJSDate();
   }
 
+  static fromJSDate(localInput: Date): DateTime {
+    if (!localInput) {
+      throw new BadRequestException('A value is required for this action.');
+    }
+
+    return DateTime.fromJSDate(localInput).setZone(APP_TIMEZONE);
+  }
+
   static convertPayload<T extends Record<string, any>>(
     payload: T,
     dateKeys: (keyof T)[],
