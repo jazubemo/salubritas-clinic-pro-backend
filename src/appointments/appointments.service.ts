@@ -19,6 +19,7 @@ import { DateTime } from 'luxon';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
 import _ from 'lodash';
+import { TimezoneUtil } from 'src/common/utils/timezone.utils';
 
 export type AppointmentChangesWithDoctorData = UpdateAppointmentInput & {
   doctorName?: string;
@@ -78,8 +79,8 @@ export class AppointmentsService {
         clinicId: new Types.ObjectId(createAppointmentInput.clinicId),
         doctorId: new Types.ObjectId(createAppointmentInput.doctorId),
         patientId: new Types.ObjectId(createAppointmentInput.patientId),
-        startTime: new Date(createAppointmentInput.startTime),
-        endTime: new Date(createAppointmentInput.endTime),
+        startTime: TimezoneUtil.toUTC(createAppointmentInput.startTime),
+        endTime: TimezoneUtil.toUTC(createAppointmentInput.endTime),
         doctorName: 'Unknown',
         patientName: 'Unknown',
       };
@@ -191,15 +192,17 @@ export class AppointmentsService {
     incomingAppointmentChanges: UpdateAppointmentInput,
     existingAppointment: Appointment,
   ) {
+    const internalIncomingChanges: AppointmentChangesWithDoctorData = {
+      ...incomingAppointmentChanges,
+      startTime: TimezoneUtil.toUTC(incomingAppointmentChanges.startTime),
+      endTime: TimezoneUtil.toUTC(incomingAppointmentChanges.endTime),
+    };
+
     const {
       startTime: incomingStartTime,
       endTime: incomingEndTime,
       doctorId: incomingDoctorId,
-    } = incomingAppointmentChanges;
-
-    const internalIncomingChanges: AppointmentChangesWithDoctorData = {
-      ...incomingAppointmentChanges,
-    };
+    } = internalIncomingChanges;
 
     const {
       clinicId,
@@ -343,13 +346,10 @@ export class AppointmentsService {
 
   async findAppointments(clinicId: string, filters: AppointmentFiltersArgs) {
     try {
-      const { startRangeString, endRangeString, timezone } = filters;
+      const { startRangeString, endRangeString } = filters;
 
-      const localStart = DateTime.fromISO(startRangeString, { zone: timezone });
-      const localEnd = DateTime.fromISO(endRangeString, { zone: timezone });
-
-      const startRangeUtc = localStart.toJSDate();
-      const endRangeUtc = localEnd.toJSDate();
+      const startRangeUtc = TimezoneUtil.toUTC(startRangeString);
+      const endRangeUtc = TimezoneUtil.toUTC(endRangeString);
 
       const query: Record<string, any> = {
         clinicId: new Types.ObjectId(clinicId),

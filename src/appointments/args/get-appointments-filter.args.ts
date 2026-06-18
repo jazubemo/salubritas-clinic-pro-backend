@@ -20,13 +20,6 @@ export class AppointmentFiltersArgs {
   @IsNotEmpty()
   endRangeString!: string;
 
-  @Field(() => String, {
-    defaultValue: APP_TIMEZONE,
-  })
-  @IsNotEmpty()
-  @IsString()
-  timezone!: string;
-
   @Field(() => ID, {
     nullable: true,
     description: 'Filter appointments by a specific doctor ID',
