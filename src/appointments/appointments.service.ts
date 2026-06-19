@@ -191,7 +191,7 @@ export class AppointmentsService {
     return startTimeUTC > now;
   }
 
-  private getInternalIncomingChanges(
+  private buildInternalPayload(
     incomingAppointmentChanges: UpdateAppointmentInput,
   ): Partial<Appointment> {
     const {
@@ -201,20 +201,21 @@ export class AppointmentsService {
       ...restOfChanges
     } = incomingAppointmentChanges;
 
-    const internalIncomingChanges: Partial<Appointment> = {
-      ...restOfChanges,
-      ...(incomingDoctorId && {
-        doctorId: new Types.ObjectId(incomingDoctorId),
-      }),
-      ...(incomingStartTime && {
-        startTime: TimezoneUtil.toUTC(incomingStartTime),
-      }),
-      ...(incomingEndTime && {
-        endTime: TimezoneUtil.toUTC(incomingEndTime),
-      }),
-    };
+    const internalChanges: Partial<Appointment> = { ...restOfChanges };
 
-    return internalIncomingChanges;
+    if (incomingDoctorId) {
+      internalChanges.doctorId = new Types.ObjectId(incomingDoctorId);
+    }
+
+    if (incomingStartTime) {
+      internalChanges.startTime = TimezoneUtil.toUTC(incomingStartTime);
+    }
+
+    if (incomingEndTime) {
+      internalChanges.endTime = TimezoneUtil.toUTC(incomingEndTime);
+    }
+
+    return internalChanges;
   }
 
   private async reschedule(
@@ -230,7 +231,7 @@ export class AppointmentsService {
       endTime: existingEndTime,
     } = existingAppointment;
 
-    const internalIncomingChanges = this.getInternalIncomingChanges(
+    const internalPayload = this.buildInternalPayload(
       incomingAppointmentChanges,
     );
 
@@ -238,7 +239,7 @@ export class AppointmentsService {
       doctorId: incomingDoctorId,
       startTime: incomingStartTime,
       endTime: incomingEndTime,
-    } = internalIncomingChanges;
+    } = internalPayload;
 
     const session = await this.connection.startSession();
     session.startTransaction();
@@ -255,7 +256,7 @@ export class AppointmentsService {
           Role.DOCTOR,
           session,
         );
-        internalIncomingChanges.doctorName = `${doctor.firstName} ${doctor.lastName}`;
+        internalPayload.doctorName = `${doctor.firstName} ${doctor.lastName}`;
       }
 
       const startTime = incomingStartTime
@@ -288,7 +289,7 @@ export class AppointmentsService {
 
       const updatedDocument = await this.update(
         objectId,
-        internalIncomingChanges,
+        internalPayload,
         session,
       );
 
