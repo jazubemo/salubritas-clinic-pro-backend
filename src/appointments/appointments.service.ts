@@ -68,57 +68,75 @@ export class AppointmentsService {
     }
   }
 
+  private async prepareNewAppointmentPayload(
+    createAppointmentInput: CreateAppointmentInput,
+    session: ClientSession,
+  ) {
+    const { patientId, doctorId, clinicId, ...restOfChanges } =
+      createAppointmentInput;
+
+    const patientObjectId = new Types.ObjectId(patientId);
+    const doctorObjectId = new Types.ObjectId(doctorId);
+    const clinicObjectId = new Types.ObjectId(clinicId);
+
+    const doctor = await this.usersService.fetchAuthorizedUser(
+      doctorObjectId,
+      clinicObjectId,
+      Role.DOCTOR,
+      session,
+    );
+
+    const patient = await this.usersService.fetchAuthorizedUser(
+      patientObjectId,
+      clinicObjectId,
+      Role.PATIENT,
+      session,
+    );
+
+    return {
+      ...restOfChanges,
+      clinicId: clinicObjectId,
+      doctorId: doctorObjectId,
+      patientId: patientObjectId,
+      startTime: TimezoneUtil.toUTC(createAppointmentInput.startTime),
+      endTime: TimezoneUtil.toUTC(createAppointmentInput.endTime),
+      doctorName: `${doctor.firstName} ${doctor.lastName}`,
+      patientName: `${patient.firstName} ${patient.lastName}`,
+    };
+  }
+
   async create(createAppointmentInput: CreateAppointmentInput) {
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
-      const newAppointment = {
-        ...createAppointmentInput,
-        clinicId: new Types.ObjectId(createAppointmentInput.clinicId),
-        doctorId: new Types.ObjectId(createAppointmentInput.doctorId),
-        patientId: new Types.ObjectId(createAppointmentInput.patientId),
-        startTime: TimezoneUtil.toUTC(createAppointmentInput.startTime),
-        endTime: TimezoneUtil.toUTC(createAppointmentInput.endTime),
-        doctorName: 'Unknown',
-        patientName: 'Unknown',
-      };
-
-      const doctor = await this.usersService.fetchAuthorizedUser(
-        newAppointment.doctorId,
-        newAppointment.clinicId.toString(),
-        Role.DOCTOR,
+      const newAppointment = await this.prepareNewAppointmentPayload(
+        createAppointmentInput,
         session,
       );
 
-      const patient = await this.usersService.fetchAuthorizedUser(
-        newAppointment.patientId,
-        newAppointment.clinicId.toString(),
-        Role.PATIENT,
+      const [overlappingAppointment] = await this.getOverlappingAppointment(
+        {
+          clinicId: newAppointment.clinicId,
+          patientId: newAppointment.patientId,
+          doctorId: newAppointment.doctorId,
+          startTime: newAppointment.startTime,
+          endTime: newAppointment.endTime,
+        },
+        undefined,
         session,
       );
 
-      // updating respective values
-      newAppointment.doctorName = doctor.lastName;
-      newAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
-
-      const overlappingAppointment = await this.getOverlappingAppointment({
-        clinicId: newAppointment.clinicId,
-        patientId: newAppointment.patientId,
-        doctorId: newAppointment.doctorId,
-        startTime: newAppointment.startTime,
-        endTime: newAppointment.endTime,
-      });
-
-      if (overlappingAppointment.length > 0) {
+      if (overlappingAppointment) {
         const isDoctorBusy =
-          overlappingAppointment[0].doctorId.toString() ===
-          createAppointmentInput.doctorId.toString();
-        const entity = isDoctorBusy ? 'The doctor' : 'The patient';
+          overlappingAppointment.doctorId.toString() ===
+          newAppointment.doctorId.toString();
 
-        throw new ConflictException(
-          `${entity} is already scheduled for an appointment during this timeframe.`,
-        );
+        const message = isDoctorBusy
+          ? 'The doctor is already booked or has an overlapping appointment during this time range.'
+          : 'The patient already has an appointment scheduled during this time range.';
+
+        throw new ConflictException(message);
       }
 
       const [newlyCreatedAppointment] = await this.appointmentModel.create(
@@ -191,28 +209,24 @@ export class AppointmentsService {
     return startTimeUTC > now;
   }
 
-  private buildInternalPayload(
+  private transformToInternalUpdatePayload(
     incomingAppointmentChanges: UpdateAppointmentInput,
   ): Partial<Appointment> {
-    const {
-      doctorId: incomingDoctorId,
-      startTime: incomingStartTime,
-      endTime: incomingEndTime,
-      ...restOfChanges
-    } = incomingAppointmentChanges;
+    const { doctorId, startTime, endTime, ...restOfChanges } =
+      incomingAppointmentChanges;
 
     const internalChanges: Partial<Appointment> = { ...restOfChanges };
 
-    if (incomingDoctorId) {
-      internalChanges.doctorId = new Types.ObjectId(incomingDoctorId);
+    if (doctorId) {
+      internalChanges.doctorId = new Types.ObjectId(doctorId);
     }
 
-    if (incomingStartTime) {
-      internalChanges.startTime = TimezoneUtil.toUTC(incomingStartTime);
+    if (startTime) {
+      internalChanges.startTime = TimezoneUtil.toUTC(startTime);
     }
 
-    if (incomingEndTime) {
-      internalChanges.endTime = TimezoneUtil.toUTC(incomingEndTime);
+    if (endTime) {
+      internalChanges.endTime = TimezoneUtil.toUTC(endTime);
     }
 
     return internalChanges;
@@ -231,25 +245,23 @@ export class AppointmentsService {
       endTime: existingEndTime,
     } = existingAppointment;
 
-    const internalPayload = this.buildInternalPayload(
+    const internalPayload = this.transformToInternalUpdatePayload(
       incomingAppointmentChanges,
     );
 
     const {
-      doctorId: incomingDoctorId,
-      startTime: incomingStartTime,
-      endTime: incomingEndTime,
+      doctorId: newDoctorId,
+      startTime: newStartTime,
+      endTime: newEndTime,
     } = internalPayload;
 
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
-      const doctorObjectId = incomingDoctorId
-        ? incomingDoctorId
-        : existingDoctorId;
+      const doctorObjectId = newDoctorId ? newDoctorId : existingDoctorId;
 
-      if (incomingDoctorId) {
+      if (newDoctorId) {
         const doctor = await this.usersService.fetchAuthorizedUser(
           doctorObjectId,
           clinicId.toString(),
@@ -259,10 +271,8 @@ export class AppointmentsService {
         internalPayload.doctorName = `${doctor.firstName} ${doctor.lastName}`;
       }
 
-      const startTime = incomingStartTime
-        ? incomingStartTime
-        : existingStartTime;
-      const endTime = incomingEndTime ? incomingEndTime : existingEndTime;
+      const startTime = newStartTime ? newStartTime : existingStartTime;
+      const endTime = newEndTime ? newEndTime : existingEndTime;
 
       if (!this.isAfterNow(startTime)) {
         throw new BadRequestException(

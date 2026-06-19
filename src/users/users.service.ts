@@ -86,7 +86,7 @@ export class UsersService {
 
   async fetchAuthorizedUser(
     userId: Types.ObjectId,
-    requestingClinicId: string,
+    requestingClinicId: Types.ObjectId,
     expectedRole: Role,
     session?: ClientSession,
   ) {
@@ -105,7 +105,7 @@ export class UsersService {
 
       const clinicMembership = user.clinicMemberships.find(
         (clinic) =>
-          clinic.clinicId.toString() === requestingClinicId &&
+          clinic.clinicId === requestingClinicId &&
           clinic.status === UserStatus.ACTIVE,
       );
 
