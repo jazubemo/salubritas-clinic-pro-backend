@@ -186,23 +186,42 @@ export class AppointmentsService {
     return this.updateMetadata(objectId, updateAppointmentInput);
   }
 
+  private isAfterNow(startTimeUTC: Date): boolean {
+    const now = new Date();
+    return startTimeUTC > now;
+  }
+
+  private getInternalIncomingChanges(
+    incomingAppointmentChanges: UpdateAppointmentInput,
+  ): Partial<Appointment> {
+    const {
+      doctorId: incomingDoctorId,
+      startTime: incomingStartTime,
+      endTime: incomingEndTime,
+      ...restOfChanges
+    } = incomingAppointmentChanges;
+
+    const internalIncomingChanges: Partial<Appointment> = {
+      ...restOfChanges,
+      ...(incomingDoctorId && {
+        doctorId: new Types.ObjectId(incomingDoctorId),
+      }),
+      ...(incomingStartTime && {
+        startTime: TimezoneUtil.toUTC(incomingStartTime),
+      }),
+      ...(incomingEndTime && {
+        endTime: TimezoneUtil.toUTC(incomingEndTime),
+      }),
+    };
+
+    return internalIncomingChanges;
+  }
+
   private async reschedule(
     objectId: Types.ObjectId,
     incomingAppointmentChanges: UpdateAppointmentInput,
     existingAppointment: Appointment,
   ) {
-    const internalIncomingChanges: AppointmentChangesWithDoctorData = {
-      ...incomingAppointmentChanges,
-      startTime: TimezoneUtil.toUTC(incomingAppointmentChanges.startTime),
-      endTime: TimezoneUtil.toUTC(incomingAppointmentChanges.endTime),
-    };
-
-    const {
-      startTime: incomingStartTime,
-      endTime: incomingEndTime,
-      doctorId: incomingDoctorId,
-    } = internalIncomingChanges;
-
     const {
       clinicId,
       _id: existingAppointmentId,
@@ -211,19 +230,25 @@ export class AppointmentsService {
       endTime: existingEndTime,
     } = existingAppointment;
 
-    const doctorObjectId = incomingDoctorId
-      ? new Types.ObjectId(incomingDoctorId)
-      : new Types.ObjectId(existingDoctorId);
+    const internalIncomingChanges = this.getInternalIncomingChanges(
+      incomingAppointmentChanges,
+    );
 
-    const startTime = incomingStartTime ? incomingStartTime : existingStartTime;
-    const endTime = incomingEndTime ? incomingEndTime : existingEndTime;
+    const {
+      doctorId: incomingDoctorId,
+      startTime: incomingStartTime,
+      endTime: incomingEndTime,
+    } = internalIncomingChanges;
 
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
-      // validations
-      if (incomingAppointmentChanges.doctorId) {
+      const doctorObjectId = incomingDoctorId
+        ? incomingDoctorId
+        : existingDoctorId;
+
+      if (incomingDoctorId) {
         const doctor = await this.usersService.fetchAuthorizedUser(
           doctorObjectId,
           clinicId.toString(),
@@ -231,6 +256,17 @@ export class AppointmentsService {
           session,
         );
         internalIncomingChanges.doctorName = `${doctor.firstName} ${doctor.lastName}`;
+      }
+
+      const startTime = incomingStartTime
+        ? incomingStartTime
+        : existingStartTime;
+      const endTime = incomingEndTime ? incomingEndTime : existingEndTime;
+
+      if (!this.isAfterNow(startTime)) {
+        throw new BadRequestException(
+          'This appointment has already passed and cannot be modified. Please schedule a new appointment.',
+        );
       }
 
       const overlappingAppointment = await this.getOverlappingAppointment(
@@ -284,9 +320,10 @@ export class AppointmentsService {
     incomingChanges: UpdateAppointmentInput,
     existingAppointment: Appointment,
   ) {
-    if (_.isEmpty(incomingChanges)) {
+    const hasNull = _.includes(_.values(incomingChanges), null);
+    if (hasNull) {
       throw new BadRequestException(
-        'No changes were detected. Please modify a detail before saving.',
+        'Cannot save updates. If you do not wish to update a field, please omit it from the request completely instead of sending null.',
       );
     }
 
@@ -396,7 +433,7 @@ export class AppointmentsService {
   /** CRUD ENDPOINTS */
   private async update(
     objectId: Types.ObjectId,
-    updateAppointmentInput: UpdateAppointmentInput,
+    updateAppointmentInput: Partial<Appointment> | UpdateAppointmentInput,
     session?: ClientSession,
   ) {
     try {

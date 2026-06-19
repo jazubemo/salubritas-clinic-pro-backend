@@ -48,7 +48,9 @@ export class UsersService {
       );
 
       if (isArchivedEverywhere) {
-        throw new UnauthorizedException('Your account has been suspended.');
+        throw new UnauthorizedException(
+          `User whose name is ${dbUser.firstName} ${dbUser.lastName}  has been suspended.`,
+        );
       }
 
       return dbUser as FlattenMaps<User>;
