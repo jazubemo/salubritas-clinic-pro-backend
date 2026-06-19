@@ -284,6 +284,12 @@ export class AppointmentsService {
     incomingChanges: UpdateAppointmentInput,
     existingAppointment: Appointment,
   ) {
+    if (_.isEmpty(incomingChanges)) {
+      throw new BadRequestException(
+        'No changes were detected. Please modify a detail before saving.',
+      );
+    }
+
     const hasChanges = this.areThereAnyChanges(
       incomingChanges,
       existingAppointment,
@@ -311,7 +317,7 @@ export class AppointmentsService {
   ) {
     const [existingAppointment] = await this.find({ _id: id });
 
-    if (existingAppointment) {
+    if (!existingAppointment) {
       throw new NotFoundException('Appointment was not found in database.');
     }
 
