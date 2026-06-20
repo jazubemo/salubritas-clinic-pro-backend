@@ -235,44 +235,46 @@ export class AppointmentsService {
   private async reschedule(
     objectId: Types.ObjectId,
     incomingAppointmentChanges: UpdateAppointmentInput,
-    existingAppointment: Appointment,
+    originalAppointment: Appointment,
   ) {
     const {
       clinicId,
-      _id: existingAppointmentId,
-      doctorId: existingDoctorId,
-      startTime: existingStartTime,
-      endTime: existingEndTime,
-    } = existingAppointment;
+      _id: originalAppointmentId,
+      doctorId: originalDoctorId,
+      startTime: originalStartTime,
+      endTime: originalEndTime,
+    } = originalAppointment;
 
-    const internalPayload = this.transformToInternalUpdatePayload(
+    const updatedAppointment = this.transformToInternalUpdatePayload(
       incomingAppointmentChanges,
     );
 
     const {
-      doctorId: newDoctorId,
-      startTime: newStartTime,
-      endTime: newEndTime,
-    } = internalPayload;
+      doctorId: updatedDoctorId,
+      startTime: updatedStartTime,
+      endTime: updatedEndTime,
+    } = updatedAppointment;
 
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
-      const doctorObjectId = newDoctorId ? newDoctorId : existingDoctorId;
+      const doctorObjectId = updatedDoctorId
+        ? updatedDoctorId
+        : originalDoctorId;
 
-      if (newDoctorId) {
+      if (updatedDoctorId) {
         const doctor = await this.usersService.fetchAuthorizedUser(
           doctorObjectId,
-          clinicId.toString(),
+          clinicId,
           Role.DOCTOR,
           session,
         );
-        internalPayload.doctorName = `${doctor.firstName} ${doctor.lastName}`;
+        updatedAppointment.doctorName = `${doctor.firstName} ${doctor.lastName}`;
       }
 
-      const startTime = newStartTime ? newStartTime : existingStartTime;
-      const endTime = newEndTime ? newEndTime : existingEndTime;
+      const startTime = updatedStartTime ? updatedStartTime : originalStartTime;
+      const endTime = updatedEndTime ? updatedEndTime : originalEndTime;
 
       if (!this.isAfterNow(startTime)) {
         throw new BadRequestException(
@@ -287,7 +289,7 @@ export class AppointmentsService {
           startTime: startTime,
           endTime: endTime,
         },
-        existingAppointmentId,
+        originalAppointmentId,
         session,
       );
 
@@ -299,7 +301,7 @@ export class AppointmentsService {
 
       const updatedDocument = await this.update(
         objectId,
-        internalPayload,
+        updatedAppointment,
         session,
       );
 
