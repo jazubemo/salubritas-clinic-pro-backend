@@ -19,7 +19,7 @@ export class UsersResolver {
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => [User])
-  async getUsers(@Args() securityArgs: SecurityClinicArgs): Promise<User[]> {
+  async findAll(@Args() securityArgs: SecurityClinicArgs): Promise<User[]> {
     return await this.usersService.findAll();
   }
 
