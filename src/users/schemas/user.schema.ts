@@ -61,6 +61,23 @@ export class User extends Document {
   @Prop({ required: true, type: [ClinicMembership] })
   clinicMemberships!: ClinicMembership[];
 
+  @Field({
+    description: 'Exact date when the appointment was created',
+  })
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  createdAt?: Date;
+
+  @Field({
+    description: 'Date when the appointment was last updated',
+  })
+  @Prop({
+    type: Date,
+  })
+  updatedAt?: Date;
+
   // @Field()
   // @Prop({ required: true, enum: Role, default: [Role.PATIENT] })
   // roles!: [Role];
