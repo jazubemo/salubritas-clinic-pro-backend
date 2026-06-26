@@ -119,7 +119,7 @@ type Query {
     """Filter appointments by started date"""
     startRange: String!
   ): [Appointment!]!
-  findAll(
+  doctors(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): [User!]!

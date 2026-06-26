@@ -8,13 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  ClientSession,
-  FlattenMaps,
-  Model,
-  ProjectionType,
-  Types,
-} from 'mongoose';
+import { ClientSession, Model, ProjectionType, Types } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { UserStatus } from './enums/user-status.enum';
 import { Role } from './enums/role.enum';
@@ -29,7 +23,7 @@ export class UsersService {
     filter: Record<string, any>,
     projection?: ProjectionType<User>,
     session?: ClientSession,
-  ): Promise<FlattenMaps<User> | null> {
+  ): Promise<User | null> {
     try {
       const query = this.userModel.findOne(filter, projection).lean();
 
@@ -53,7 +47,7 @@ export class UsersService {
         );
       }
 
-      return dbUser as FlattenMaps<User>;
+      return dbUser;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -71,15 +65,28 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
+  async find(
+    filters: Record<string, any>,
+    projection?: ProjectionType<User>,
+    session?: ClientSession,
+  ): Promise<User[]> {
     try {
-      return await this.userModel.find().exec();
+      const query = this.userModel.find(filters, projection).lean();
+
+      if (session) {
+        query.session(session);
+      }
+
+      return await query.exec();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.stack : String(error);
-      this.logger.error('Failed to fetch users from database', errorMessage);
+      this.logger.error(
+        'Failed to fetch these users from database',
+        errorMessage,
+      );
 
       throw new InternalServerErrorException(
-        'Failed to retrieve users due to a database error.',
+        'An unexpected error occurred while retrieving users.',
       );
     }
   }

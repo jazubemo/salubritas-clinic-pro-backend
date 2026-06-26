@@ -5,7 +5,7 @@ import { ClinicMembership } from './clinic-membership.schema';
 
 @ObjectType()
 @Schema({ timestamps: true })
-export class User extends Document {
+export class User {
   @Field(() => ID)
   declare _id: Types.ObjectId;
 
