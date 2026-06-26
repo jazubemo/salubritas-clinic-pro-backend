@@ -414,7 +414,7 @@ export class AppointmentsService {
         clinicId: new Types.ObjectId(clinicId),
         startTime: {
           $gte: startRangeUtc,
-          $lte: endRangeUtc,
+          $lt: endRangeUtc,
         },
         status: {
           $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
