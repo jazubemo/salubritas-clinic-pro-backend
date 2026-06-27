@@ -3,10 +3,7 @@ import { Types } from 'mongoose';
 import { UserStatus } from '../enums/user-status.enum';
 import { Role } from './../enums/role.enum';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
-import {
-  DoctorAvailability,
-  DoctorAvailabilitySchema,
-} from 'src/doctors/schemas/doctor-availability.schema';
+import { Shift, ShiftSchema } from 'src/doctors/schemas/shift.schema';
 
 @ObjectType()
 @Schema({ _id: true, timestamps: true })
@@ -34,9 +31,9 @@ export class ClinicMembership {
   @Prop({ type: [String], required: true, enum: Role })
   roles!: Role[];
 
-  @Field(() => [DoctorAvailability], { nullable: true })
-  @Prop({ type: [DoctorAvailabilitySchema], default: [] })
-  availabilities?: DoctorAvailability[];
+  @Field(() => [Shift], { nullable: true })
+  @Prop({ type: [ShiftSchema], default: [] })
+  shifts?: Shift[];
 }
 
 export const ClinicMembershipSchema =

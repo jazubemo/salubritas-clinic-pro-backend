@@ -3,7 +3,7 @@ import { Field, ObjectType, Int } from '@nestjs/graphql';
 
 @ObjectType()
 @Schema({ _id: true })
-export class DoctorAvailability {
+export class Shift {
   @Field(() => [Int])
   @Prop({ type: [Number], required: true })
   daysOfWeek!: number[];
@@ -17,5 +17,4 @@ export class DoctorAvailability {
   endTime!: string; // e.g., "12:00"
 }
 
-export const DoctorAvailabilitySchema =
-  SchemaFactory.createForClass(DoctorAvailability);
+export const ShiftSchema = SchemaFactory.createForClass(Shift);

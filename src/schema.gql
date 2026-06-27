@@ -53,10 +53,10 @@ enum AppointmentStatus {
 }
 
 type ClinicMembership {
-  availabilities: [DoctorAvailability!]
   clinicId: ID!
   name: String!
   roles: [Role!]!
+  shifts: [Shift!]
 
   """
   The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
@@ -88,12 +88,6 @@ input CreateAppointmentInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
-
-type DoctorAvailability {
-  daysOfWeek: [Int!]!
-  endTime: String!
-  startTime: String!
-}
 
 type Mutation {
   createAppointment(
@@ -142,6 +136,12 @@ enum Role {
   ADMIN
   DOCTOR
   PATIENT
+}
+
+type Shift {
+  daysOfWeek: [Int!]!
+  endTime: String!
+  startTime: String!
 }
 
 input UpdateAppointmentInput {
