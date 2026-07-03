@@ -16,13 +16,6 @@ import { SecurityClinicArgs } from 'src/common/security/clinic-security.args';
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles(Role.ADMIN)
-  @UseGuards(RolesGuard)
-  @Query(() => [User])
-  async findAll(@Args() securityArgs: SecurityClinicArgs): Promise<User[]> {
-    return await this.usersService.findAll();
-  }
-
   @Roles()
   @UseGuards(RolesGuard)
   @Query(() => String, { name: 'getHello' })
