@@ -89,6 +89,16 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DoctorProfile {
+  """Exact date when the doctor data was created"""
+  createdAt: DateTime
+  licenseNumber: String!
+  specialty: Specialty
+
+  """Date when the doctor data was last updated"""
+  updatedAt: DateTime
+}
+
 type Mutation {
   createAppointment(
     """Clinic ID for guard permission validation"""
@@ -144,6 +154,14 @@ type Shift {
   startTime: String!
 }
 
+"""Doctors specialty"""
+enum Specialty {
+  CARDIOTHORACIC_SURGERY
+  GENERAL_SURGERY
+  INTERNAL_MEDICINE
+  PEDIATRIC
+}
+
 input UpdateAppointmentInput {
   doctorId: String
   endTime: DateTime
@@ -171,6 +189,9 @@ type User {
   The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).
   """
   dni: String!
+
+  """Doctor metadata"""
+  doctorProfile: DoctorProfile
 
   """The user's email. It's linked to firebase authentication."""
   email: String

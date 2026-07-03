@@ -30,6 +30,9 @@ export class DoctorsService {
         clinicMemberships: {
           $elemMatch: { clinicId: clinicObjectId },
         },
+        doctorProfile: {
+          specialty: 1,
+        },
       },
     );
   }

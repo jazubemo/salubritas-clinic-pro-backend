@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { Document, Types } from 'mongoose';
 import { ClinicMembership } from './clinic-membership.schema';
+import { DoctorProfile } from 'src/doctors/schemas/doctor-profile.schema';
 
 @ObjectType()
 @Schema({ timestamps: true })
@@ -77,6 +78,16 @@ export class User {
     type: Date,
   })
   updatedAt?: Date;
+
+  @Field({
+    description: 'Doctor metadata',
+    nullable: true,
+  })
+  @Prop({
+    type: DoctorProfile,
+    required: false,
+  })
+  doctorProfile?: DoctorProfile;
 
   // @Field()
   // @Prop({ required: true, enum: Role, default: [Role.PATIENT] })
