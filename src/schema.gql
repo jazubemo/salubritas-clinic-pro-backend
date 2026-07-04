@@ -143,6 +143,11 @@ type Query {
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): [User!]!
+  searchPatients(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+    query: String!
+  ): [User!]!
 }
 
 """The available user roles within a clinic."""

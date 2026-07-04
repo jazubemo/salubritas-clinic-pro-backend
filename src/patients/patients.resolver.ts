@@ -22,4 +22,17 @@ export class PatientsResolver {
       securityArgs.activeClinicId,
     );
   }
+
+  @Roles(Role.ADMIN, Role.DOCTOR)
+  @UseGuards(RolesGuard)
+  @Query(() => [User], { name: 'searchPatients' })
+  searchPatients(
+    @Args() securityArgs: SecurityClinicArgs,
+    @Args('query', { type: () => String }) query: string,
+  ) {
+    return this.patientsService.searchPatients(
+      securityArgs.activeClinicId,
+      query,
+    );
+  }
 }
