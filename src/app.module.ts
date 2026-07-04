@@ -13,6 +13,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { RedisModule } from './redis/redis.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { DoctorsModule } from './doctors/doctors.module';
+import { PatientsModule } from './patients/patients.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { DoctorsModule } from './doctors/doctors.module';
     RedisModule,
     AppointmentsModule,
     DoctorsModule,
+    PatientsModule,
   ],
 
   providers: [],

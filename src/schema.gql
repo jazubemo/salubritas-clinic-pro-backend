@@ -139,6 +139,10 @@ type Query {
     activeClinicId: String!
   ): String!
   getMe: User
+  patients(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): [User!]!
 }
 
 """The available user roles within a clinic."""
