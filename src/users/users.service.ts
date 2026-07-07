@@ -112,7 +112,7 @@ export class UsersService {
 
       const clinicMembership = user.clinicMemberships.find(
         (clinic) =>
-          clinic.clinicId === requestingClinicId &&
+          clinic.clinicId.toString() === requestingClinicId.toString() &&
           clinic.status === UserStatus.ACTIVE,
       );
 
