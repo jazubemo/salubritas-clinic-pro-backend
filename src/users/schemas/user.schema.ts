@@ -5,7 +5,9 @@ import { ClinicMembership } from './clinic-membership.schema';
 import { DoctorProfile } from 'src/doctors/schemas/doctor-profile.schema';
 
 @ObjectType()
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+})
 export class User {
   @Field(() => ID)
   declare _id: Types.ObjectId;
@@ -89,21 +91,13 @@ export class User {
   })
   doctorProfile?: DoctorProfile;
 
-  // @Field()
-  // @Prop({ required: true, enum: Role, default: [Role.PATIENT] })
-  // roles!: [Role];
-
-  // @Field()
-  // @Prop({ required: true })
-  // createdAt!: Date;
+  // virtual property
+  @Field(() => String)
+  fullName!: string;
 
   // @Field()
   // @Prop({ required: true })
   // createdBy!: Types.ObjectId;
-
-  // @Field()
-  // @Prop({ required: true })
-  // updatedAt!: Date;
 
   // @Field()
   // @Prop({ required: true })
@@ -112,10 +106,6 @@ export class User {
   // @Field({ nullable: true })
   // @Prop()
   // lastLogin?: Date;
-
-  // @Field({ nullable: true })
-  // @Prop()
-  // email?: string;
 
   // @Field({ nullable: true })
   // @Prop()

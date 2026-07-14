@@ -209,6 +209,7 @@ type User {
   The user's given name(s). Includes first and middle names (e.g., 'Carlos Alberto').
   """
   firstName: String!
+  fullName: String!
 
   """The user's legal surname(s)."""
   lastName: String!
