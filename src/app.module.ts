@@ -14,6 +14,7 @@ import { RedisModule } from './redis/redis.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { DoctorsModule } from './doctors/doctors.module';
 import { PatientsModule } from './patients/patients.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PatientsModule } from './patients/patients.module';
     AppointmentsModule,
     DoctorsModule,
     PatientsModule,
+    PrismaModule,
   ],
 
   providers: [],
