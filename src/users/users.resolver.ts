@@ -1,4 +1,4 @@
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { User } from './schemas/user.schema';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/firebase/guards/auth.guard';
@@ -27,5 +27,12 @@ export class UsersResolver {
   @RequireDbUser()
   getMe(@CurrentUser() user: User) {
     return user;
+  }
+
+  @ResolveField(() => String)
+  fullName(@Parent() user: User): string {
+    const first = user.firstName || '';
+    const last = user.lastName || '';
+    return `${first} ${last}`.trim() || 'Unknown User';
   }
 }

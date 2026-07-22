@@ -139,6 +139,15 @@ type Query {
     activeClinicId: String!
   ): String!
   getMe: User
+  patients(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+  ): [User!]!
+  searchPatients(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+    query: String!
+  ): [User!]!
 }
 
 """The available user roles within a clinic."""
@@ -200,6 +209,7 @@ type User {
   The user's given name(s). Includes first and middle names (e.g., 'Carlos Alberto').
   """
   firstName: String!
+  fullName: String!
 
   """The user's legal surname(s)."""
   lastName: String!
