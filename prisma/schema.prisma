@@ -1,8 +1,8 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
-
 datasource db {
   provider = "postgresql"
 }
@@ -17,6 +17,43 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
+  // Relation to the clinicMemberships join table
+  clinicMemberships ClinicMembership[]
+
   @@map("users")
+}
+
+model Clinic {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String             @db.VarChar(255)
+  address           String             @db.Text
+  phone             String             @db.VarChar(50)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation to the membership join table
+  clinicMemberships ClinicMembership[]
+
+  @@map("clinics")
+}
+
+model ClinicMembership {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  clinicId  String     @map("clinic_id") @db.Uuid
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clinicId]) // Prevents a user from joining the same clinic twice
+  @@map("clinic_memberships")
+}
+
+enum UserStatus {
+  ACTIVE
+  ARCHIVED
 }
 

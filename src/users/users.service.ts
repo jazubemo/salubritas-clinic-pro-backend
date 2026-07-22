@@ -7,144 +7,152 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Model, ProjectionType, Types } from 'mongoose';
-import { User } from './schemas/user.schema';
-import { UserStatus } from './enums/user-status.enum';
 import { Role } from './enums/role.enum';
+import { PrismaService } from '../prisma/prisma.service';
+import { ClinicMembership, UserStatus } from '@prisma-custom';
+import { UserWithMemberships } from './interfaces/user-with-memberships';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(private prisma: PrismaService) {}
+
+  private handleError(error: unknown): never {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.stack : String(error);
+    this.logger.error('Failed to fetch this user from database', errorMessage);
+    throw new InternalServerErrorException(
+      'An unexpected error occurred while retrieving this user.',
+    );
+  }
+
+  private validateUserStatus(dbUser: UserWithMemberships): void {
+    const memberships = dbUser.clinicMemberships;
+    const isArchivedEverywhere =
+      memberships.length > 0 &&
+      memberships.every(
+        (membership: ClinicMembership) =>
+          membership.status === UserStatus.ARCHIVED,
+      );
+
+    if (isArchivedEverywhere) {
+      throw new UnauthorizedException(
+        `User whose name is ${dbUser.firstName} ${dbUser.lastName} has been suspended.`,
+      );
+    }
+  }
 
   async findOne(
     filter: Record<string, any>,
-    projection?: ProjectionType<User>,
-    session?: ClientSession,
-  ): Promise<User | null> {
+    select?: Record<string, any>,
+  ): Promise<UserWithMemberships> {
     try {
-      const query = this.userModel.findOne(filter, projection).lean();
+      const queryOptions: any = { where: filter };
 
-      if (session) {
-        query.session(session);
+      if (select) {
+        queryOptions.select = { ...select, clinicMemberships: true };
+      } else {
+        queryOptions.include = { clinicMemberships: true };
       }
 
-      const dbUser = await query.exec();
+      // Executes directly on the main Prisma client instance
+      const dbUser = await this.prisma.user.findFirst(queryOptions);
 
       if (!dbUser) {
         throw new NotFoundException('User profile not found in database.');
       }
 
-      const isArchivedEverywhere = dbUser.clinicMemberships.every(
-        (membership) => membership.status === UserStatus.ARCHIVED,
-      );
+      this.validateUserStatus(dbUser as unknown as UserWithMemberships);
 
-      if (isArchivedEverywhere) {
-        throw new UnauthorizedException(
-          `User whose name is ${dbUser.firstName} ${dbUser.lastName}  has been suspended.`,
-        );
-      }
-
-      return dbUser;
+      return dbUser as unknown as UserWithMemberships;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      const errorMessage = error instanceof Error ? error.stack : String(error);
-      this.logger.error(
-        'Failed to fetch this user from database',
-        errorMessage,
-      );
-
-      throw new InternalServerErrorException(
-        'An unexpected error occurred while retrieving this user.',
-      );
+      return this.handleError(error);
     }
   }
 
-  async find(
-    filters: Record<string, any>,
-    projection?: ProjectionType<User>,
-    session?: ClientSession,
-  ): Promise<User[]> {
-    try {
-      const query = this.userModel.find(filters, projection).lean();
+  // async find(
+  //   filters: Record<string, any>,
+  //   projection?: ProjectionType<User>,
+  //   session?: ClientSession,
+  // ): Promise<User[]> {
+  //   try {
+  //     const query = this.userModel.find(filters, projection).lean();
 
-      if (session) {
-        query.session(session);
-      }
+  //     if (session) {
+  //       query.session(session);
+  //     }
 
-      return await query.exec();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.stack : String(error);
-      this.logger.error(
-        'Failed to fetch these users from database',
-        errorMessage,
-      );
+  //     return await query.exec();
+  //   } catch (error) {
+  //     const errorMessage = error instanceof Error ? error.stack : String(error);
+  //     this.logger.error(
+  //       'Failed to fetch these users from database',
+  //       errorMessage,
+  //     );
 
-      throw new InternalServerErrorException(
-        'An unexpected error occurred while retrieving users.',
-      );
-    }
-  }
+  //     throw new InternalServerErrorException(
+  //       'An unexpected error occurred while retrieving users.',
+  //     );
+  //   }
+  // }
 
-  async fetchAuthorizedUser(
-    userId: Types.ObjectId,
-    requestingClinicId: Types.ObjectId,
-    expectedRole: Role,
-    session?: ClientSession,
-  ) {
-    try {
-      const user = await this.findOne(
-        {
-          _id: userId,
-        },
-        undefined,
-        session,
-      );
+  // async fetchAuthorizedUser(
+  //   userId: Types.ObjectId,
+  //   requestingClinicId: Types.ObjectId,
+  //   expectedRole: Role,
+  //   session?: ClientSession,
+  // ) {
+  //   try {
+  //     const user = await this.findOne(
+  //       {
+  //         _id: userId,
+  //       },
+  //       undefined,
+  //       session,
+  //     );
 
-      if (!user) {
-        throw new NotFoundException(`User with id (${userId}) not found`);
-      }
+  //     if (!user) {
+  //       throw new NotFoundException(`User with id (${userId}) not found`);
+  //     }
 
-      const clinicMembership = user.clinicMemberships.find(
-        (clinic) =>
-          clinic.clinicId.toString() === requestingClinicId.toString() &&
-          clinic.status === UserStatus.ACTIVE,
-      );
+  //     const clinicMembership = user.clinicMemberships.find(
+  //       (clinic) =>
+  //         clinic.clinicId.toString() === requestingClinicId.toString() &&
+  //         clinic.status === UserStatus.ACTIVE,
+  //     );
 
-      if (!clinicMembership) {
-        throw new ForbiddenException(
-          `This user ${userId} is not an active member of the requested clinic.`,
-        );
-      }
+  //     if (!clinicMembership) {
+  //       throw new ForbiddenException(
+  //         `This user ${userId} is not an active member of the requested clinic.`,
+  //       );
+  //     }
 
-      const hasRequiredRole = clinicMembership.roles.includes(expectedRole);
+  //     const hasRequiredRole = clinicMembership.roles.includes(expectedRole);
 
-      if (!hasRequiredRole) {
-        throw new ForbiddenException(
-          `This user does not have the required role (${expectedRole.toLowerCase()}) assigned at this clinic.`,
-        );
-      }
+  //     if (!hasRequiredRole) {
+  //       throw new ForbiddenException(
+  //         `This user does not have the required role (${expectedRole.toLowerCase()}) assigned at this clinic.`,
+  //       );
+  //     }
 
-      return user;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+  //     return user;
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
 
-      const errorMessage = error instanceof Error ? error.stack : String(error);
-      this.logger.error(
-        `Failed to fetch user ${userId} from database`,
-        errorMessage,
-      );
+  //     const errorMessage = error instanceof Error ? error.stack : String(error);
+  //     this.logger.error(
+  //       `Failed to fetch user ${userId} from database`,
+  //       errorMessage,
+  //     );
 
-      throw new InternalServerErrorException(
-        'Failed to retrieve this user due to a database error.',
-      );
-    }
-  }
+  //     throw new InternalServerErrorException(
+  //       'Failed to retrieve this user due to a database error.',
+  //     );
+  //   }
+  // }
 }

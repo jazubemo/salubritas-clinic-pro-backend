@@ -1,11 +1,13 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { User } from '../schemas/user.schema';
 import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-request';
-import { FlattenMaps } from 'mongoose';
+import { UserWithMemberships } from '../interfaces/user-with-memberships';
 
 export const CurrentUser = createParamDecorator(
-  (data: unknown, context: ExecutionContext): FlattenMaps<User> | undefined => {
+  (
+    data: unknown,
+    context: ExecutionContext,
+  ): UserWithMemberships | undefined => {
     const ctx = GqlExecutionContext.create(context).getContext<{
       req: AuthenticatedRequest;
     }>();
