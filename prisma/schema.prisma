@@ -41,19 +41,32 @@ model ClinicMembership {
   id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String     @map("user_id") @db.Uuid
   clinicId  String     @map("clinic_id") @db.Uuid
+  
+  roles     UserRole[] @map("roles")
+  
   status    UserStatus @default(ACTIVE)
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, clinicId]) // Prevents a user from joining the same clinic twice
+
+  @@unique([userId, clinicId]) 
+  
+  @@index([roles], type: Gin) 
   @@map("clinic_memberships")
 }
 
 enum UserStatus {
   ACTIVE
   ARCHIVED
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  PATIENT
 }
 
