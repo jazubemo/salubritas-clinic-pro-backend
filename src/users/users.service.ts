@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -7,7 +6,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Role } from './enums/role.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClinicMembership, UserStatus } from '@prisma-custom';
 import { UserWithMemberships } from './interfaces/user-with-memberships';
@@ -52,13 +50,23 @@ export class UsersService {
     try {
       const queryOptions: any = { where: filter };
 
+      const membershipRelation = {
+        include: {
+          clinic: true,
+        },
+      };
+
       if (select) {
-        queryOptions.select = { ...select, clinicMemberships: true };
+        queryOptions.select = {
+          ...select,
+          clinicMemberships: membershipRelation,
+        };
       } else {
-        queryOptions.include = { clinicMemberships: true };
+        queryOptions.include = {
+          clinicMemberships: membershipRelation,
+        };
       }
 
-      // Executes directly on the main Prisma client instance
       const dbUser = await this.prisma.user.findFirst(queryOptions);
 
       if (!dbUser) {

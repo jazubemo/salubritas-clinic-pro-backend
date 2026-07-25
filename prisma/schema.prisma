@@ -20,6 +20,9 @@ model User {
   // Relation to the clinicMemberships join table
   clinicMemberships ClinicMembership[]
 
+  @@index([dni])
+  @@index([authId])
+
   @@map("users")
 }
 
@@ -33,6 +36,8 @@ model Clinic {
 
   // Relation to the membership join table
   clinicMemberships ClinicMembership[]
+
+  @@index([id])
 
   @@map("clinics")
 }

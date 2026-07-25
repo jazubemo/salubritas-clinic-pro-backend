@@ -7,5 +7,5 @@ export interface UserWithMemberships {
   email: string;
   createdAt: Date;
   updatedAt: Date | null;
-  clinicMemberships: any[]; 
+  clinicMemberships: any[];
 }
