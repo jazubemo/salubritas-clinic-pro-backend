@@ -8,7 +8,6 @@ A secure, high-performance GraphQL backend engineered for medical professionals 
 
 * **📅 Smart Appointment Scheduling:** Real-time booking with automated provider availability validation.
 * **🔐 Secure Authentication with Firebase:** Built-in mechanisms to keep user authentication and sessions secure.
-* **😷 Patient Management:** Comprehensive patient lists with quick access to create, update, and archive records.
 * **🌍 URL-Based Multi-Tenancy:** Run multiple clinic instances simultaneously. The app isolates data by embedding a clinicId in the URL, allowing staff to securely work in different clinics across multiple browser tabs at the same time.
 * **🚫 Role-Based Access Control:** Secure route guards to protect endpoints and restrict unauthorized access.
 * **🔒 Strict HIPAA Readiness:** Comprehensive audit logging for data access alongside field-level encryption for PII.
@@ -18,14 +17,16 @@ A secure, high-performance GraphQL backend engineered for medical professionals 
 
 * **💻 Framework:** NestJS (TypeScript) utilizing Domain-Driven Design (DDD) principles.
 * **🌐 API Layer:** GraphQL (Code-First approach) with Apollo Server.
-* **💾 Database:** MongoDB via Mongoose ODM.
+* **💾 Database:** PostgreSQL via Prisma ODM.
 * **🛡️ Validation:** Class-validator with custom medical-logic constraints.
 
 😍 **System Design Highlights**
 
-* **⚡ MongoDB Optimization:** Utilizes compound indexes on `doctorID` and `appointmentDate` to keep scheduling queries under 10ms.
+* **⚡ PostgreSQL Optimization:** Utilizes compound indexes on `doctorID` and `appointmentDate` to keep scheduling queries under 10ms.
 * **🏗️ NestJS Dependency Injection:** Keeps business logic isolated from database frameworks for easy unit testing.
-* **🧼 Data Sanitization:** Strict Mongoose schemas prevent NoSQL injection vectors.
+* **🧼 SQL Database:** For clinical management system to ensure scalability and future data analysis we must use SQL databases.
+* E-R diagram: https://dbdiagram.io/d/salubritas-clinic-pro-6a667af7067336e1def90e2b
+  
 
 ## ⚡ Quick Start
 
