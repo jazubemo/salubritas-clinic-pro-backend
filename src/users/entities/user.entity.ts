@@ -1,5 +1,7 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { ClinicMembership } from '../../clinic-memberships/entities/clinic-membership.entity'; // Your updated GraphQL entity
+import { Doctor } from 'src/doctors/entities/doctor.entity';
+import { Patient } from 'src/patients/entities/patient.entity';
 
 @ObjectType()
 export class User {
@@ -38,6 +40,18 @@ export class User {
     nullable: true,
   })
   clinicMemberships?: ClinicMembership[];
+
+  @Field(() => Patient, {
+    nullable: true,
+    description: "The user's optional patient profile details.",
+  })
+  patient?: Patient | null;
+
+  @Field(() => Doctor, {
+    nullable: true,
+    description: "The user's optional doctor profile details.",
+  })
+  doctor?: Doctor | null;
 
   @Field({
     description: 'Exact date when the user profile was created',

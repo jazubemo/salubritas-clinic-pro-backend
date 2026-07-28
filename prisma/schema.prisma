@@ -19,6 +19,8 @@ model User {
 
   // Relation to the clinicMemberships join table
   clinicMemberships ClinicMembership[]
+  patient   Patient?
+  doctor    Doctor?
 
   @@index([dni])
   @@index([authId])
@@ -64,6 +66,35 @@ model ClinicMembership {
   @@map("clinic_memberships")
 }
 
+model Patient {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  dateOfBirth DateTime @map("date_of_birth") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation definition
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id])
+
+  @@map("patients")
+}
+
+model Doctor {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @unique @map("user_id") @db.Uuid
+  specialty     Specialty
+  licenseNumber String    @unique @map("license_number")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation definition
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("doctors")
+}
+
 enum UserStatus {
   ACTIVE
   ARCHIVED
@@ -73,5 +104,12 @@ enum UserRole {
   ADMIN
   DOCTOR
   PATIENT
+}
+
+enum Specialty {
+  INTERNAL_MEDICINE
+  PEDIATRICS
+  GENERAL_SURGERY
+  CARDIOLOGY
 }
 
