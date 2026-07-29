@@ -50,21 +50,21 @@ export class UsersService {
     try {
       const queryOptions: any = { where: filter };
 
-      const membershipRelation = {
-        include: {
-          clinic: true,
+      const relations = {
+        clinicMemberships: {
+          include: { clinic: true },
         },
+        patient: true,
+        doctor: true,
       };
 
       if (select) {
         queryOptions.select = {
           ...select,
-          clinicMemberships: membershipRelation,
+          ...relations,
         };
       } else {
-        queryOptions.include = {
-          clinicMemberships: membershipRelation,
-        };
+        queryOptions.include = relations;
       }
 
       const dbUser = await this.prisma.user.findFirst(queryOptions);
