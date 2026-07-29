@@ -2,86 +2,22 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Appointment {
-  _id: ID!
-
-  """Clinic where the appointment was created."""
-  clinicId: ID!
-
-  """Exact date when the appointment was created"""
-  createdAt: DateTime
-
-  """The doctor that will attend the appointment."""
-  doctorId: ID!
-
-  """The doctor's full name."""
-  doctorName: String!
-
-  """Exact date and time when the appointment ends"""
-  endTime: DateTime!
-
-  """
-  States if the user who scheduled the appointment is a new user in the system
-  """
-  isNewPatient: Boolean!
-
-  """The user that requested the appointment"""
-  patientId: ID!
-
-  """The patient's full name."""
-  patientName: String!
-
-  """It explains why the appointment was created."""
-  reason: String
-
-  """Exact date and time when the appointment starts"""
-  startTime: DateTime!
-
-  """The current operational status of the appointments."""
-  status: AppointmentStatus!
-
-  """Date when the appointment was last updated"""
-  updatedAt: DateTime
-}
-
-"""The current operational status of the appointments"""
-enum AppointmentStatus {
-  CANCELLED
-  COMPLETED
-  CONFIRMED
-  PENDING
-}
-
 type ClinicMembership {
   clinicId: ID!
+
+  """Timestamp when membership was created"""
+  createdAt: DateTime!
+  id: ID!
   name: String!
   roles: [Role!]!
-  shifts: [Shift!]
 
   """
   The current operational status of the user account. Allowed values: ACTIVE, ARCHIVED.
   """
   status: UserStatus!
-}
 
-input CreateAppointmentInput {
-  """Clinic where the appointment was created."""
-  clinicId: ID!
-
-  """The doctor that will attend the appointment."""
-  doctorId: ID!
-  endTime: DateTime!
-
-  """
-  States if the user who scheduled the appointment is a new user in the system
-  """
-  isNewPatient: Boolean!
-
-  """The user that requested the appointment"""
-  patientId: ID!
-  reason: String
-  startTime: DateTime!
-  status: AppointmentStatus!
+  """Timestamp when membership was last updated"""
+  updatedAt: DateTime!
 }
 
 """
@@ -89,65 +25,51 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
-type DoctorProfile {
-  """Exact date when the doctor data was created"""
-  createdAt: DateTime
-  licenseNumber: String!
-  specialty: Specialty
+type Doctor {
+  """Exact date when the doctor record was created"""
+  createdAt: DateTime!
+  id: ID!
 
-  """Date when the doctor data was last updated"""
-  updatedAt: DateTime
+  """The doctor unique medical license identification string."""
+  licenseNumber: String!
+
+  """The registered medical specialty of the doctor."""
+  specialty: Specialty!
+
+  """Date when the doctor record was last updated"""
+  updatedAt: DateTime!
+
+  """The parent user profile associated with this doctor."""
+  user: User
+
+  """The unique ID linking this doctor record to a core user."""
+  userId: String!
 }
 
-type Mutation {
-  createAppointment(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-    createAppointmentInput: CreateAppointmentInput!
-  ): Appointment!
-  updateAppointment(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-    id: ID!
-    updateAppointmentInput: UpdateAppointmentInput!
-  ): Appointment!
+type Patient {
+  """Exact date when the patient record was created"""
+  createdAt: DateTime!
+
+  """The calendar date of birth (stored as DATE in PostgreSQL)."""
+  dateOfBirth: DateTime!
+  id: ID!
+
+  """Date when the patient record was last updated"""
+  updatedAt: DateTime!
+
+  """The parent user profile associated with this patient."""
+  user: User
+
+  """The unique ID linking this patient record to a core user."""
+  userId: String!
 }
 
 type Query {
-  appointments(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-
-    """Filter appointments by a specific doctor ID"""
-    doctorId: ID
-
-    """Filter appointments by end date"""
-    endRange: String!
-
-    """Filter appointments by a specific patient ID"""
-    patientId: ID
-
-    """Filter appointments by started date"""
-    startRange: String!
-  ): [Appointment!]!
-  doctors(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-  ): [User!]!
   getHello(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
   ): String!
   getMe: User
-  patients(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-  ): [User!]!
-  searchPatients(
-    """Clinic ID for guard permission validation"""
-    activeClinicId: String!
-    query: String!
-  ): [User!]!
 }
 
 """The available user roles within a clinic."""
@@ -155,12 +77,6 @@ enum Role {
   ADMIN
   DOCTOR
   PATIENT
-}
-
-type Shift {
-  daysOfWeek: [Int!]!
-  endTime: String!
-  startTime: String!
 }
 
 """Doctors specialty"""
@@ -171,50 +87,43 @@ enum Specialty {
   PEDIATRIC
 }
 
-input UpdateAppointmentInput {
-  doctorId: String
-  endTime: DateTime
-  isNewPatient: Boolean
-  reason: String
-  startTime: DateTime
-  status: AppointmentStatus
-}
-
 type User {
-  _id: ID!
-
   """
-  The unique security identifier (UID) provided by Firebase Authentication. Used to map the database user to their authenticated identity.
+  The unique security identifier (UID) provided by Firebase Authentication.
   """
   authId: String!
 
-  """Map of clinic IDs to the user's assigned roles at each location."""
-  clinicMemberships: [ClinicMembership!]!
+  """Array of clinic memberships mapping locations to roles."""
+  clinicMemberships: [ClinicMembership!]
 
-  """Exact date when the appointment was created"""
+  """Exact date when the user profile was created"""
   createdAt: DateTime!
 
   """
-  The Honduran National Identification Document number. Format: 13 digits without hyphens (e.g., 0801199512345).
+  The Honduran National Identification Document number. Format: 13 digits without hyphens.
   """
   dni: String!
 
-  """Doctor metadata"""
-  doctorProfile: DoctorProfile
+  """The user's optional doctor profile details."""
+  doctor: Doctor
 
   """The user's email. It's linked to firebase authentication."""
-  email: String
+  email: String!
 
-  """
-  The user's given name(s). Includes first and middle names (e.g., 'Carlos Alberto').
-  """
+  """The user's given name(s). Includes first and middle names."""
   firstName: String!
+
+  """Computed property joining first and last name."""
   fullName: String!
+  id: ID!
 
   """The user's legal surname(s)."""
   lastName: String!
 
-  """Date when the appointment was last updated"""
+  """The user's optional patient profile details."""
+  patient: Patient
+
+  """Date when the user profile was last updated"""
   updatedAt: DateTime!
 }
 

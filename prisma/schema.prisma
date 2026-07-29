@@ -1,0 +1,116 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dni       String   @unique @db.VarChar(13) 
+  firstName String   @map("first_name") @db.VarChar(150)
+  lastName  String   @map("last_name") @db.VarChar(150)
+  authId    String   @unique @map("auth_id") @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation to the clinicMemberships join table
+  clinicMemberships ClinicMembership[]
+  patient   Patient?
+  doctor    Doctor?
+
+  @@index([dni])
+  @@index([authId])
+
+  @@map("users")
+}
+
+model Clinic {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String             @db.VarChar(255)
+  address           String             @db.Text
+  phone             String             @db.VarChar(50)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation to the membership join table
+  clinicMemberships ClinicMembership[]
+
+  @@index([id])
+
+  @@map("clinics")
+}
+
+model ClinicMembership {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  clinicId  String     @map("clinic_id") @db.Uuid
+  
+  roles     UserRole[] @map("roles")
+  
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+
+  @@unique([userId, clinicId]) 
+  
+  @@index([roles], type: Gin) 
+  @@map("clinic_memberships")
+}
+
+model Patient {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  dateOfBirth DateTime @map("date_of_birth") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation definition
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id])
+
+  @@map("patients")
+}
+
+model Doctor {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @unique @map("user_id") @db.Uuid
+  specialty     Specialty
+  licenseNumber String    @unique @map("license_number")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation definition
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("doctors")
+}
+
+enum UserStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+enum Specialty {
+  INTERNAL_MEDICINE
+  PEDIATRICS
+  GENERAL_SURGERY
+  CARDIOLOGY
+  GYNECOLOGIST
+}
+

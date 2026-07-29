@@ -1,4 +1,4 @@
-import { ClinicMembership } from 'src/users/schemas/clinic-membership.schema';
+import { ClinicMembership } from 'src/clinic-memberships/entities/clinic-membership.entity';
 
 export const getUserClinicRolesInObject = (
   activeClinicMemberships: ClinicMembership[],
