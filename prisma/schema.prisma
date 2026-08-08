@@ -101,7 +101,7 @@ model Appointment {
   status       AppointmentStatus @default(PENDING)
   isNewPatient Boolean           @map("is_new_patient")
   createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
@@ -110,6 +110,7 @@ model Appointment {
 
   // constraint: a patient cannot book the same appointment twice
   @@unique([patientId, clinicId, startTime], map: "unique_patient_clinic_time_appointment")
+  @@unique([doctorId, startTime], map: "unique_doctor_time_appointment")
 
 
   @@index([clinicId, doctorId, startTime])
