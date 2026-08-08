@@ -22,9 +22,6 @@ model User {
   patient   Patient?
   doctor    Doctor?
 
-  @@index([dni])
-  @@index([authId])
-
   @@map("users")
 }
 
@@ -38,8 +35,7 @@ model Clinic {
 
   // Relation to the membership join table
   clinicMemberships ClinicMembership[]
-
-  @@index([id])
+  appointments Appointment[]
 
   @@map("clinics")
 }
@@ -75,8 +71,7 @@ model Patient {
 
   // Relation definition
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([id])
+  appointments Appointment[]
 
   @@map("patients")
 }
@@ -91,9 +86,39 @@ model Doctor {
 
   // Relation definition
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   @@map("doctors")
 }
+
+model Appointment {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId     String            @map("clinic_id") @db.Uuid
+  patientId    String            @map("patient_id") @db.Uuid
+  doctorId     String            @map("doctor_id") @db.Uuid
+  startTime    DateTime          @map("start_time") @db.Timestamptz
+  endTime      DateTime          @map("end_time") @db.Timestamptz
+  status       AppointmentStatus @default(PENDING)
+  isNewPatient Boolean           @map("is_new_patient")
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  // constraint: a patient cannot book the same appointment twice
+  @@unique([patientId, clinicId, startTime], map: "unique_patient_clinic_time_appointment")
+
+
+  @@index([clinicId, doctorId, startTime])
+
+  @@unique([patientId, clinicId, startTime])
+
+  @@map("appointments")
+}
+
 
 enum UserStatus {
   ACTIVE
@@ -112,5 +137,12 @@ enum Specialty {
   GENERAL_SURGERY
   CARDIOLOGY
   GYNECOLOGIST
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }
 
