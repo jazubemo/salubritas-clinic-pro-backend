@@ -1,13 +1,11 @@
 import { Field, InputType, OmitType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
-import { Appointment } from '../schemas/appointment.schema';
 import {
   IsDate,
   IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
-  MinDate,
 } from 'class-validator';
 import { AppointmentStatus } from '../enums/appointment-status.enum';
 import { IsAfter } from '../decorators/is-after.decorator';
@@ -17,20 +15,12 @@ import {
   MIN_APPOINTMENT_DURATION_MINUTES,
 } from 'src/common/constants/app.constants';
 import { IsAfterNowHonduras } from '../decorators/is-after-now-honduras.decorator';
+import { Appointment } from '../entities/appointment.entity';
 
 @InputType()
 export class CreateAppointmentInput extends OmitType(
   Appointment,
-  [
-    '_id',
-    'createdAt',
-    'updatedAt',
-    'patientName',
-    'doctorName',
-    'startTime', // field omitted because it needs special validations
-    'endTime', // field omitted because it needs special validations
-    'status', // field omitted because it needs special validations
-  ] as const,
+  ['id', 'createdAt', 'updatedAt', 'startTime', 'endTime', 'status'] as const,
   InputType,
 ) {
   @Field(() => Date)

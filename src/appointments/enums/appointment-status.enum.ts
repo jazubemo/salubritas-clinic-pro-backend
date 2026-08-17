@@ -1,11 +1,9 @@
 import { registerEnumType } from '@nestjs/graphql';
+import * as PrismaEnums from 'generated/prisma/enums';
 
-export enum AppointmentStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-}
+export const AppointmentStatus = PrismaEnums.AppointmentStatus;
+
+export type AppointmentStatus = PrismaEnums.AppointmentStatus;
 
 registerEnumType(AppointmentStatus, {
   name: 'AppointmentStatus',

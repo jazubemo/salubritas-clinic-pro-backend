@@ -11,9 +11,9 @@ import GraphQLJSON from 'graphql-type-json';
 import { UsersModule } from './users/users.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { RedisModule } from './redis/redis.module';
-//import { AppointmentsModule } from './appointments/appointments.module';
 //import { DoctorsModule } from './doctors/doctors.module';
 //import { PatientsModule } from './patients/patients.module';
+import { AppointmentsModule } from './appointments/appointments.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -41,7 +41,7 @@ import { PrismaModule } from './prisma/prisma.module';
     UsersModule,
     FirebaseModule,
     RedisModule,
-    // AppointmentsModule,
+    AppointmentsModule,
     // DoctorsModule,
     // PatientsModule,
     PrismaModule,

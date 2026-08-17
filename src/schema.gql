@@ -2,6 +2,55 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Appointment {
+  """Clinic where the appointment was created."""
+  clinicId: ID!
+
+  """Exact date when the appointment was created"""
+  createdAt: DateTime
+
+  """The full doctor record"""
+  doctor: Doctor!
+
+  """The doctor that will attend the appointment."""
+  doctorId: ID!
+
+  """Exact date and time when the appointment ends"""
+  endTime: DateTime!
+  id: ID!
+
+  """
+  States if the user who scheduled the appointment is a new user in the system
+  """
+  isNewPatient: Boolean!
+
+  """The full patient record"""
+  patient: Patient!
+
+  """The user that requested the appointment"""
+  patientId: ID!
+
+  """It explains why the appointment was created."""
+  reason: String
+
+  """Exact date and time when the appointment starts"""
+  startTime: DateTime!
+
+  """The current operational status of the appointments."""
+  status: AppointmentStatus!
+
+  """Date when the appointment was last updated"""
+  updatedAt: DateTime
+}
+
+"""The current operational status of the appointments"""
+enum AppointmentStatus {
+  CANCELLED
+  COMPLETED
+  CONFIRMED
+  PENDING
+}
+
 type ClinicMembership {
   clinicId: ID!
 
@@ -65,6 +114,22 @@ type Patient {
 }
 
 type Query {
+  appointments(
+    """Clinic ID for guard permission validation"""
+    activeClinicId: String!
+
+    """Filter appointments by a specific doctor ID"""
+    doctorId: ID
+
+    """Filter appointments by end date"""
+    endRange: String!
+
+    """Filter appointments by a specific patient ID"""
+    patientId: ID
+
+    """Filter appointments by started date"""
+    startRange: String!
+  ): [Appointment!]!
   getHello(
     """Clinic ID for guard permission validation"""
     activeClinicId: String!
