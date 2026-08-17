@@ -26,7 +26,7 @@
 //         firstName: 1,
 //         lastName: 1,
 //         email: 1,
-//         _id: 1,
+//         id: 1,
 //         clinicMemberships: {
 //           $elemMatch: { clinicId: clinicObjectId },
 //         },

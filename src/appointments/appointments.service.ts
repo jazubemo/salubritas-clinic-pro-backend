@@ -51,7 +51,7 @@ export class AppointmentsService {
 
       // Exclude the appointment itself from the overlap check
       if (excludeAppointmentId) {
-        query._id = { $ne: excludeAppointmentId };
+        query.id = { $ne: excludeAppointmentId };
       }
 
       return await this.find(query);
@@ -407,22 +407,22 @@ export class AppointmentsService {
       const endRangeUtc = isChronological ? endInputUtc : startInputUtc;
 
       const query: Record<string, any> = {
-        clinicId: new Types.ObjectId(clinicId),
+        clinicId: clinicId,
         startTime: {
-          $gte: startRangeUtc,
-          $lt: endRangeUtc,
+          gte: startRangeUtc,
+          lt: endRangeUtc,
         },
         status: {
-          $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+          in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
         },
       };
 
       if (doctorId) {
-        query.doctorId = new Types.ObjectId(filters?.doctorId);
+        query.doctorId = filters?.doctorId;
       }
 
       if (patientId) {
-        query.patientId = new Types.ObjectId(filters?.patientId);
+        query.patientId = filters?.patientId;
       }
 
       return await this.find(query);

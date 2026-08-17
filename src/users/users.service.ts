@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { ClinicMembership, UserStatus } from '@prisma-custom';
 import { UserWithMemberships } from './interfaces/user-with-memberships';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -46,7 +47,7 @@ export class UsersService {
   async findOne(
     filter: Record<string, any>,
     select?: Record<string, any>,
-  ): Promise<UserWithMemberships> {
+  ): Promise<User> {
     try {
       const queryOptions: any = { where: filter };
 
@@ -75,7 +76,7 @@ export class UsersService {
 
       this.validateUserStatus(dbUser as unknown as UserWithMemberships);
 
-      return dbUser as unknown as UserWithMemberships;
+      return dbUser as unknown as User;
     } catch (error) {
       return this.handleError(error);
     }

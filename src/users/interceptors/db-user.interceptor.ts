@@ -14,6 +14,7 @@ import { AuthenticatedRequest } from '../../firebase/interfaces/authenticated-re
 import { UserStatus } from '../enums/user-status.enum';
 import { RedisService } from 'src/redis/redis.service';
 import { getUserClinicRolesInObject } from 'src/common/helpers/get-user-clinic-roles-in-object';
+import { ClinicMembership } from 'src/clinic-memberships/entities/clinic-membership.entity';
 
 @Injectable()
 export class DbUserInterceptor implements NestInterceptor {
@@ -51,9 +52,9 @@ export class DbUserInterceptor implements NestInterceptor {
         throw new UnauthorizedException('Access Denied: Unregistered account.');
       }
 
-      const activeClinicMemberships = dbUser.clinicMemberships.filter(
+      const activeClinicMemberships = dbUser.clinicMemberships?.filter(
         (clinic) => clinic.status === UserStatus.ACTIVE,
-      );
+      ) as ClinicMembership[];
 
       const dbClinicRoles = getUserClinicRolesInObject(activeClinicMemberships);
 

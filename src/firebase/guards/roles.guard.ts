@@ -15,6 +15,7 @@ import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
 import { UserStatus } from 'src/users/enums/user-status.enum';
 import { getUserClinicRolesInObject } from 'src/common/helpers/get-user-clinic-roles-in-object';
+import { ClinicMembership } from 'src/clinic-memberships/entities/clinic-membership.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -81,18 +82,17 @@ export class RolesGuard implements CanActivate {
     authId: string,
     activeClinicId: string,
   ): Promise<Role[]> {
-    const dbUser = await this.userService.findOne(
-      { authId },
-      { clinicMemberships: 1, _id: 0 },
-    );
+    const dbUser = await this.userService.findOne({
+      authId,
+    });
 
     if (dbUser) {
-      const activeClinicMemberships = dbUser.clinicMemberships.filter(
+      const activeClinicMemberships = dbUser.clinicMemberships?.filter(
         (clinic) => clinic.status === UserStatus.ACTIVE,
-      );
+      ) as ClinicMembership[];
 
-      const dbUserClinic = activeClinicMemberships.find(
-        (membership) => membership.clinicId.toString() === activeClinicId,
+      const dbUserClinic = activeClinicMemberships?.find(
+        (membership) => membership.clinicId === activeClinicId,
       );
 
       if (!dbUserClinic) {
